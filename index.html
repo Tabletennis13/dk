@@ -312,6 +312,25 @@
             color: white;
         }
         
+        /* Стили для панелей администратора */
+        .admin-controls-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .admin-controls-panel h4 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+        }
+        
+        /* Стили для других админ-контролов в контенте */
         .admin-controls {
             background: #f8f9fa;
             padding: 15px;
@@ -726,16 +745,6 @@
         <!-- Контент вкладок -->
         <div class="tab-content active" id="rating">
             <h2>🏆 Текущий рейтинг игроков</h2>
-            <div class="admin-controls" id="ratingAdminControls">
-                <h4>⚙️ Управление рейтингом (администратор)</h4>
-                <button class="penalty-btn action-btn" onclick="checkAndApplyPenalties()">
-                    ⚠️ Применить авто-штрафы (8+ дней = -60)
-                </button>
-                <button class="add-btn action-btn" onclick="saveManualRatings()">
-                    💾 Сохранить изменения
-                </button>
-                <p><small>Измените очки в полях ввода и нажмите "Сохранить"</small></p>
-            </div>
             <div class="table-container">
                 <table class="compact-table">
                     <thead>
@@ -936,6 +945,18 @@
         
         <!-- Панели внизу сайта -->
         <div class="bottom-panels">
+            <!-- Панель управления рейтингом (администратор) -->
+            <div class="admin-controls-panel" id="ratingAdminControls">
+                <h4>⚙️ Управление рейтингом (администратор)</h4>
+                <button class="penalty-btn action-btn" onclick="checkAndApplyPenalties()">
+                    ⚠️ Применить авто-штрафы (8+ дней = -60)
+                </button>
+                <button class="add-btn action-btn" onclick="saveManualRatings()">
+                    💾 Сохранить изменения очков
+                </button>
+                <p><small>Измените очки в полях ввода в таблице рейтинга и нажмите "Сохранить изменения очков"</small></p>
+            </div>
+            
             <!-- Панель Supabase -->
             <div class="supabase-panel">
                 <div class="supabase-status">
@@ -1312,7 +1333,7 @@
         document.getElementById('ratingAdminControls').style.display = 'none';
         document.getElementById('matchesAdminControls').style.display = 'none';
         document.getElementById('penaltiesAdminControls').style.display = 'none';
-            document.getElementById('playersAdminControls').style.display = 'none';
+        document.getElementById('playersAdminControls').style.display = 'none';
         
         // Удаляем из localStorage
         localStorage.removeItem('tennisAdmin');
