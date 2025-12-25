@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Рейтинг тенниса</title>
     <style>
         * {
@@ -18,44 +18,45 @@
             color: #333;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 10px;
+            padding: 8px;
             -webkit-text-size-adjust: 100%;
+            overflow-x: hidden;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
             overflow: hidden;
-            position: relative;
         }
         
         header {
             background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
             color: white;
-            padding: 20px 15px;
+            padding: 18px 12px;
             text-align: center;
-            position: relative;
         }
         
         header h1 {
-            font-size: 1.8em;
-            margin-bottom: 8px;
+            font-size: 1.6em;
+            margin-bottom: 6px;
             word-break: break-word;
+            line-height: 1.3;
         }
         
         .header-subtitle {
-            font-size: 1em;
+            font-size: 0.95em;
             opacity: 0.9;
-            padding: 0 10px;
+            padding: 0 8px;
+            line-height: 1.4;
         }
         
         .supabase-panel {
             background: #e8f5e9;
             padding: 12px 15px;
-            margin: 15px;
+            margin: 12px;
             border-radius: 10px;
             border-left: 5px solid #4CAF50;
             display: flex;
@@ -67,12 +68,14 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
+            font-size: 0.9em;
         }
         
         .supabase-panel .action-btn {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             font-size: 14px;
+            height: 44px;
         }
         
         .status-connected { color: #2E7D32; font-weight: bold; }
@@ -83,7 +86,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 15px;
-            margin: 15px;
+            margin: 12px;
             border-radius: 10px;
             display: none;
         }
@@ -95,7 +98,7 @@
         .login-panel {
             background: #f5f5f5;
             padding: 15px;
-            margin: 15px;
+            margin: 12px;
             border-radius: 10px;
             text-align: center;
         }
@@ -108,6 +111,7 @@
             margin-bottom: 10px;
             font-size: 16px;
             -webkit-appearance: none;
+            height: 48px;
         }
         
         .login-btn, .logout-btn {
@@ -119,6 +123,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             width: 100%;
+            height: 48px;
         }
         
         .login-btn {
@@ -126,8 +131,8 @@
             color: white;
         }
         
-        .login-btn:hover, .logout-btn:hover {
-            transform: translateY(-2px);
+        .login-btn:active, .logout-btn:active {
+            transform: translateY(1px);
         }
         
         .logout-btn {
@@ -143,7 +148,9 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
-            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         
         .tabs::-webkit-scrollbar {
@@ -172,7 +179,7 @@
         
         .tab-content {
             display: none;
-            padding: 20px 15px;
+            padding: 15px 12px;
             animation: fadeIn 0.3s ease;
         }
         
@@ -185,34 +192,61 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
+        /* Улучшения для таблиц */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 12px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 15px 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            display: block;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+            min-width: 600px;
+            background: white;
         }
         
         th {
             background: #4CAF50;
             color: white;
-            padding: 12px 10px;
+            padding: 12px 8px;
             text-align: left;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
+            white-space: nowrap;
         }
         
         td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            font-size: 14px;
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        
+        /* Стили для таблицы рейтинга - компактные */
+        #ratingBody td {
+            padding: 8px 6px;
+        }
+        
+        #ratingBody .player-cell {
+            min-width: 0;
+        }
+        
+        #ratingBody .player-cell span {
+            font-size: 13px;
+            white-space: normal;
+            word-break: break-word;
+            line-height: 1.3;
+            max-width: 120px;
         }
         
         .avatar {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid #4CAF50;
@@ -223,6 +257,16 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            min-width: 0;
+        }
+        
+        .player-cell span {
+            font-size: 14px;
+            white-space: normal;
+            word-break: break-word;
+            line-height: 1.3;
+            flex: 1;
+            min-width: 0;
         }
         
         .rating-badge {
@@ -243,6 +287,7 @@
             font-size: 12px;
             transition: all 0.2s ease;
             min-height: 32px;
+            white-space: nowrap;
         }
         
         .delete-btn {
@@ -274,7 +319,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 16px;
+            font-size: 15px;
         }
         
         .form-group {
@@ -294,8 +339,9 @@
             padding: 10px;
             border: 2px solid #ddd;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             -webkit-appearance: none;
+            height: 44px;
         }
         
         .form-group input:focus, .form-group select:focus {
@@ -313,7 +359,7 @@
             display: grid;
             grid-template-columns: 1fr;
             gap: 15px;
-            margin: 20px 0;
+            margin: 15px 0;
         }
         
         .period-box {
@@ -325,10 +371,10 @@
         
         .period-box h3 {
             color: #333;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             padding-bottom: 8px;
             border-bottom: 2px solid #4CAF50;
-            font-size: 16px;
+            font-size: 15px;
         }
         
         .comparison-container {
@@ -369,10 +415,10 @@
         }
         
         .year-progress {
-            height: 180px;
+            height: 160px;
             background: #f5f5f5;
             border-radius: 10px;
-            padding: 15px;
+            padding: 12px;
             margin: 15px 0;
             display: flex;
             align-items: flex-end;
@@ -383,7 +429,7 @@
         
         .progress-bar {
             flex: 1;
-            min-width: 40px;
+            min-width: 35px;
             background: linear-gradient(to top, #4CAF50, #8BC34A);
             border-radius: 8px 8px 0 0;
             position: relative;
@@ -411,87 +457,31 @@
             font-weight: bold;
         }
         
-        /* Мобильные стили */
-        @media (max-width: 480px) {
+        /* Стили для полей ввода рейтинга */
+        .rating-input {
+            width: 70px !important;
+            padding: 6px !important;
+            font-size: 14px !important;
+            height: 36px;
+            text-align: center;
+        }
+        
+        /* Медиа-запросы для адаптации */
+        @media (min-width: 481px) {
             body {
-                padding: 5px;
+                padding: 10px;
             }
             
             .container {
-                border-radius: 10px;
+                border-radius: 15px;
             }
             
             header {
-                padding: 15px 10px;
+                padding: 20px 15px;
             }
             
             header h1 {
-                font-size: 1.5em;
-            }
-            
-            .header-subtitle {
-                font-size: 0.9em;
-            }
-            
-            .supabase-panel,
-            .admin-panel,
-            .login-panel,
-            .tab-content {
-                margin: 10px;
-                padding: 12px;
-            }
-            
-            .tab-btn {
-                padding: 12px 14px;
-                font-size: 13px;
-            }
-            
-            th, td {
-                padding: 8px;
-                font-size: 13px;
-            }
-            
-            .avatar {
-                width: 35px;
-                height: 35px;
-            }
-            
-            .rating-input {
-                width: 70px !important;
-                padding: 4px !important;
-                font-size: 14px !important;
-            }
-            
-            .action-btn {
-                padding: 5px 8px;
-                font-size: 11px;
-                min-height: 28px;
-            }
-            
-            .password-input,
-            .login-btn,
-            .logout-btn {
-                padding: 10px 15px;
-                font-size: 15px;
-            }
-            
-            .year-progress {
-                height: 150px;
-                padding: 12px;
-            }
-            
-            .progress-bar {
-                min-width: 35px;
-            }
-        }
-        
-        @media (min-width: 481px) and (max-width: 768px) {
-            .grid-2 {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .period-stats {
-                grid-template-columns: repeat(2, 1fr);
+                font-size: 1.8em;
             }
             
             .supabase-panel {
@@ -502,15 +492,9 @@
             
             .supabase-panel .action-btn {
                 width: auto;
-                min-width: 150px;
+                min-width: 160px;
             }
             
-            .tabs {
-                justify-content: center;
-            }
-        }
-        
-        @media (min-width: 769px) {
             .grid-2 {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -519,47 +503,160 @@
                 grid-template-columns: repeat(3, 1fr);
             }
             
-            .supabase-panel {
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
+            .tabs {
+                justify-content: center;
             }
             
-            .supabase-panel .action-btn {
-                width: auto;
+            #ratingBody .player-cell span {
+                max-width: 150px;
             }
+        }
+        
+        @media (min-width: 769px) {
+            .tab-content {
+                padding: 20px 15px;
+            }
+            
+            table {
+                min-width: 800px;
+            }
+            
+            th, td {
+                padding: 12px 10px;
+                font-size: 14px;
+            }
+            
+            #ratingBody .player-cell span {
+                max-width: 200px;
+            }
+            
+            .player-cell span {
+                font-size: 15px;
+            }
+            
+            .avatar {
+                width: 40px;
+                height: 40px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            /* Дополнительные стили для очень маленьких экранов */
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                border-radius: 8px;
+            }
+            
+            header {
+                padding: 15px 10px;
+            }
+            
+            header h1 {
+                font-size: 1.4em;
+            }
+            
+            .header-subtitle {
+                font-size: 0.85em;
+            }
+            
+            .supabase-panel,
+            .admin-panel,
+            .login-panel,
+            .tab-content {
+                margin: 8px;
+                padding: 10px;
+            }
+            
+            .tab-btn {
+                padding: 12px 14px;
+                font-size: 13px;
+            }
+            
+            th {
+                padding: 10px 6px;
+                font-size: 12px;
+            }
+            
+            td {
+                padding: 8px 6px;
+                font-size: 12px;
+            }
+            
+            .avatar {
+                width: 32px;
+                height: 32px;
+            }
+            
+            #ratingBody .player-cell span {
+                font-size: 12px;
+                max-width: 100px;
+            }
+            
+            .rating-input {
+                width: 65px !important;
+                padding: 5px !important;
+                font-size: 13px !important;
+                height: 34px;
+            }
+            
+            .action-btn {
+                padding: 5px 8px;
+                font-size: 11px;
+                min-height: 30px;
+            }
+            
+            .password-input,
+            .login-btn,
+            .logout-btn {
+                padding: 10px 15px;
+                font-size: 15px;
+                height: 44px;
+            }
+            
+            .year-progress {
+                height: 140px;
+                padding: 10px;
+            }
+            
+            .progress-bar {
+                min-width: 30px;
+            }
+        }
+        
+        /* Стили для улучшения читаемости на мобильных */
+        .mobile-optimized-table table {
+            font-size: 12px;
+        }
+        
+        .mobile-optimized-table th,
+        .mobile-optimized-table td {
+            padding: 6px 4px;
         }
         
         /* Улучшения для iOS */
         @supports (-webkit-touch-callout: none) {
             input, select, textarea, button {
-                font-size: 16px !important; /* Предотвращает автоматическое увеличение в iOS */
+                font-size: 16px !important;
+            }
+            
+            .tabs {
+                -webkit-overflow-scrolling: touch;
             }
         }
         
-        /* Улучшения для таблиц на мобильных */
-        @media (max-width: 768px) {
-            table th:nth-child(3),
-            table td:nth-child(3) {
-                min-width: 80px;
-            }
-            
-            table th:nth-child(4),
-            table td:nth-child(4),
-            table th:nth-child(5),
-            table td:nth-child(5) {
-                min-width: 70px;
-            }
+        /* Стили для состояний загрузки */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
         }
         
         /* Ховер-эффекты только для десктопа */
         @media (hover: hover) and (pointer: fine) {
             .login-btn:hover {
                 background: #45a049;
-            }
-            
-            .tab-btn:hover {
-                background: #e0e0e0;
             }
             
             .action-btn:hover {
@@ -572,24 +669,29 @@
             }
         }
         
-        /* Стили для состояний загрузки */
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
-        
-        /* Улучшения для длинных имен */
-        .player-cell span {
+        /* Фикс для длинных имен в таблице игроков */
+        #playersBody .player-cell span {
+            font-size: 13px;
+            white-space: normal;
             word-break: break-word;
-            overflow-wrap: break-word;
+            line-height: 1.3;
+            max-width: 150px;
         }
         
-        /* Фикс для модальных окон на мобильных */
-        @media (max-width: 768px) {
-            .modal-content {
-                width: 95% !important;
-                margin: 10px auto !important;
-            }
+        /* Компактные стили для таблиц на мобильных */
+        .compact-table td:nth-child(1) { width: 60px; }
+        .compact-table td:nth-child(2) { min-width: 140px; }
+        .compact-table td:nth-child(3) { width: 80px; }
+        .compact-table td:nth-child(4) { width: 70px; }
+        .compact-table td:nth-child(5) { width: 90px; }
+        .compact-table td:nth-child(6) { width: 100px; }
+        .compact-table td:nth-child(7) { width: 90px; }
+        .compact-table td:nth-child(8) { width: 70px; }
+        
+        /* Адаптация для очень длинных имен */
+        .long-name {
+            font-size: 11px !important;
+            line-height: 1.2 !important;
         }
     </style>
 </head>
@@ -650,21 +752,23 @@
                 </button>
                 <p><small>Измените очки в полях ввода и нажмите "Сохранить"</small></p>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Место</th>
-                        <th>Игрок</th>
-                        <th>Очки</th>
-                        <th>Матчи</th>
-                        <th>Побед</th>
-                        <th>Последняя игра</th>
-                        <th>Неактивность</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody id="ratingBody"></tbody>
-            </table>
+            <div class="table-container">
+                <table class="compact-table">
+                    <thead>
+                        <tr>
+                            <th>Место</th>
+                            <th>Игрок</th>
+                            <th>Очки</th>
+                            <th>Матчи</th>
+                            <th>Побед</th>
+                            <th>Последняя игра</th>
+                            <th>Неактивность</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ratingBody"></tbody>
+                </table>
+            </div>
         </div>
         
         <div class="tab-content" id="matches">
@@ -705,20 +809,22 @@
                     </div>
                 </div>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Дата</th>
-                        <th>Игрок 1</th>
-                        <th>Игрок 2</th>
-                        <th>Победитель</th>
-                        <th>Счет</th>
-                        <th>Изменения</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody id="matchesBody"></tbody>
-            </table>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Игрок 1</th>
+                            <th>Игрок 2</th>
+                            <th>Победитель</th>
+                            <th>Счет</th>
+                            <th>Изменения</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matchesBody"></tbody>
+                </table>
+            </div>
         </div>
         
         <div class="tab-content" id="players">
@@ -753,25 +859,27 @@
                     </div>
                 </div>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Аватар</th>
-                        <th>Имя</th>
-                        <th>Рейтинг</th>
-                        <th>Матчи</th>
-                        <th>Побед</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody id="playersBody"></tbody>
-            </table>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Аватар</th>
+                            <th>Имя</th>
+                            <th>Рейтинг</th>
+                            <th>Матчи</th>
+                            <th>Побед</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playersBody"></tbody>
+                </table>
+            </div>
         </div>
         
         <div class="tab-content" id="stats">
             <h2>📊 Статистика и аналитика</h2>
             <div class="form-group" style="max-width: 400px;">
-                <label>Выберите игрока для детальной статистики:</label>
+                <label>Выберите игрока для детальной статистика:</label>
                 <select id="statsPlayerSelect" onchange="updatePeriodStats()"></select>
             </div>
             
@@ -826,18 +934,20 @@
                 </button>
                 <p><small>Штраф: -60 очков за каждые 8+ дней неактивности</small></p>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Дата</th>
-                        <th>Игрок</th>
-                        <th>Штраф</th>
-                        <th>Дни неактивности</th>
-                        <th>Тип</th>
-                    </tr>
-                </thead>
-                <tbody id="penaltiesHistoryBody"></tbody>
-            </table>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Игрок</th>
+                            <th>Штраф</th>
+                            <th>Дни неактивности</th>
+                            <th>Тип</th>
+                        </tr>
+                    </thead>
+                    <tbody id="penaltiesHistoryBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -1188,7 +1298,7 @@
         document.getElementById('ratingAdminControls').style.display = 'none';
         document.getElementById('matchesAdminControls').style.display = 'none';
         document.getElementById('penaltiesAdminControls').style.display = 'none';
-        document.getElementById('playersAdminControls').style.display = 'none';
+            document.getElementById('playersAdminControls').style.display = 'none';
         
         // Удаляем из localStorage
         localStorage.removeItem('tennisAdmin');
@@ -1230,9 +1340,9 @@
         if (sortedPlayers.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 30px;">
-                        <h3>😕 Игроков пока нет</h3>
-                        <p>Войдите как администратор и добавьте первого игрока</p>
+                    <td colspan="8" style="text-align: center; padding: 25px;">
+                        <h3 style="font-size: 16px; margin-bottom: 10px;">😕 Игроков пока нет</h3>
+                        <p style="font-size: 14px;">Войдите как администратор и добавьте первого игрока</p>
                     </td>
                 </tr>
             `;
@@ -1262,6 +1372,10 @@
             
             const row = document.createElement('tr');
             
+            // Проверяем длину имени для адаптации размера шрифта
+            const nameLength = name.length;
+            const nameClass = nameLength > 20 ? 'long-name' : '';
+            
             if (isAdmin) {
                 row.innerHTML = `
                     <td><strong>${index + 1}</strong></td>
@@ -1269,14 +1383,14 @@
                         <div class="player-cell">
                             <img src="${data.avatar}" class="avatar" 
                                  onerror="this.src='https://i.pravatar.cc/150?img=3'}">
-                            <span>${name}</span>
+                            <span class="${nameClass}">${name}</span>
                         </div>
                     </td>
                     <td>
                         <input type="number" class="rating-input" 
                                value="${data.rating}" 
                                data-player="${name}"
-                               min="0" max="3000" style="width: 70px; padding: 5px; font-size: 14px;">
+                               min="0" max="3000">
                     </td>
                     <td>${data.matches}</td>
                     <td>${data.wins} (${data.matches ? Math.round(data.wins/data.matches*100) : 0}%)</td>
@@ -1295,7 +1409,7 @@
                         <div class="player-cell">
                             <img src="${data.avatar}" class="avatar" 
                                  onerror="this.src='https://i.pravatar.cc/150?img=3'}">
-                            <span>${name}</span>
+                            <span class="${nameClass}">${name}</span>
                         </div>
                     </td>
                     <td><span class="rating-badge">${data.rating}</span></td>
@@ -1320,9 +1434,9 @@
         if (matches.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 30px;">
-                        <h3>🎾 Матчей пока нет</h3>
-                        <p>Войдите как администратор и добавьте первый матч</p>
+                    <td colspan="7" style="text-align: center; padding: 25px;">
+                        <h3 style="font-size: 16px; margin-bottom: 10px;">🎾 Матчей пока нет</h3>
+                        <p style="font-size: 14px;">Войдите как администратор и добавьте первый матч</p>
                     </td>
                 </tr>
             `;
@@ -1342,14 +1456,14 @@
                     <div class="player-cell">
                         <img src="${players[match.player1]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
                              class="avatar" style="width: 32px; height: 32px;">
-                        ${match.player1}
+                        <span>${match.player1}</span>
                     </div>
                 </td>
                 <td>
                     <div class="player-cell">
                         <img src="${players[match.player2]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
                              class="avatar" style="width: 32px; height: 32px;">
-                        ${match.player2}
+                        <span>${match.player2}</span>
                     </div>
                 </td>
                 <td><strong>${match.winner === 'draw' ? 'Ничья' : (match.winner || '-')}</strong></td>
@@ -1381,6 +1495,9 @@
         playerList.forEach(([name, data]) => {
             const row = document.createElement('tr');
             
+            const nameLength = name.length;
+            const nameClass = nameLength > 20 ? 'long-name' : '';
+            
             const actionsCell = isAdmin ? 
                 `<td>
                     <button class="action-btn" onclick="changeAvatar('${name}')" title="Сменить аватар" style="background: #2196F3; margin-right: 5px;">🖼️</button>
@@ -1391,7 +1508,7 @@
             row.innerHTML = `
                 <td><img src="${data.avatar}" class="avatar" 
                        onerror="this.src='https://i.pravatar.cc/150?img=3'}"></td>
-                <td><strong>${name}</strong></td>
+                <td><span class="${nameClass}">${name}</span></td>
                 <td><span class="rating-badge">${data.rating}</span></td>
                 <td>${data.matches}</td>
                 <td>${data.wins} (${data.matches ? Math.round(data.wins/data.matches*100) : 0}%)</td>
@@ -1411,9 +1528,9 @@
         if (penaltyLog.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 30px;">
-                        <h3>✅ Штрафов нет</h3>
-                        <p>Все игроки активны!</p>
+                    <td colspan="5" style="text-align: center; padding: 25px;">
+                        <h3 style="font-size: 16px; margin-bottom: 10px;">✅ Штрафов нет</h3>
+                        <p style="font-size: 14px;">Все игроки активны!</p>
                     </td>
                 </tr>
             `;
@@ -2123,7 +2240,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 15px 20px;
+            padding: 12px 16px;
             border-radius: 8px;
             color: white;
             font-weight: bold;
@@ -2131,7 +2248,7 @@
             animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             max-width: calc(100vw - 40px);
-            word-break: break-word;
+            font-size: 14px;
         `;
         
         if (type === 'success') {
@@ -2232,7 +2349,11 @@
     }
     
     // Запускаем приложение при загрузке страницы
-    window.onload = init;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
     </script>
 </body>
 </html>
