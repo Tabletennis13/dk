@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Рейтинг тенниса</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .tab { margin-top: 20px; }
+        .tab-button { padding: 10px; cursor: pointer; background: #f0f0f0; border: none; }
+        .active { background: #4CAF50; color: white; }
+        .tab-content { display: none; padding: 20px; border: 1px solid #ccc; }
+        .visible { display: block; }
+        button { padding: 5px 10px; margin: 2px; cursor: pointer; }
+        .delete-btn { background: #ff4444; color: white; }
+        .penalty-btn { background: #ff8800; color: white; }
+        .add-btn { background: #4CAF50; color: white; }
+        .warning { color: #ff8800; }
+        .danger { color: #ff4444; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .player-cell { display: flex; align-items: center; gap: 10px; }
+        .rating-input { width: 60px; text-align: center; }
+        .period-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; }
+        .period-box { border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        
+        /* Админ-панель */
+        .admin-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .admin-panel h3 { margin: 0 0 10px 0; color: white; }
+        .admin-active .admin-panel {
+            display: block;
+        }
+        .password-input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        .login-btn {
+            padding: 8px 15px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .logout-btn {
+            padding: 8px 15px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .admin-controls {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <!-- Админ панель (скрыта по умолчанию) -->
+    <div class="admin-panel">
+        <h3>⚙️ Панель администратора</h3>
+        <p>Вы вошли как администратор. Доступны все функции управления.</p>
+        <button class="logout-btn" onclick="logoutAdmin()">🚪 Выйти из админ-режима</button>
+    </div>
+    
+    <!-- Панель входа -->
+    <div id="loginPanel" style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <h3 style="margin-top: 0;">🔐 Управление системой</h3>
+        <p>Для внесения матчей и изменений войдите как администратор:</p>
+        <input type="password" id="adminPassword" class="password-input" placeholder="Пароль администратора">
+        <button class="login-btn" onclick="loginAdmin()">Войти как администратор</button>
+    </div>
+    
+    <h1>🎾 Рейтинг настольного тенниса</h1>
+    
+    <!-- Вкладки -->
+    <div class="tab">
+        <button class="tab-button active" onclick="openTab('current')">🏆 Рейтинг</button>
+        <button class="tab-button" onclick="openTab('matches')">🎮 Матчи</button>
+        <button class="tab-button" onclick="openTab('stats')">📊 Статистика</button>
+        <button class="tab-button" onclick="openTab('penalties')">⚠️ Штрафы</button>
+        <button class="tab-button" onclick="openTab('players')">👥 Игроки</button>
+    </div>
+    
+    <!-- Текущий рейтинг -->
+    <div id="current" class="tab-content visible">
+        <h2>🏆 Текущий рейтинг</h2>
+        
+        <!-- Админ-контролы для рейтинга -->
+        <div class="admin-controls" style="display: none;" id="ratingAdminControls">
+            <h4>⚙️ Управление рейтингом (только для администратора)</h4>
+            <button class="penalty-btn" onclick="checkAndApplyPenalties()">
+                ⚠️ Применить авто-штрафы (8+ дней = -60)
+            </button>
+            <button onclick="saveManualRatings()" style="background: #2196F3; color: white;">
+                💾 Сохранить изменения очков
+            </button>
+            <p><small>Измените очки в полях ввода выше и нажмите "Сохранить"</small></p>
+        </div>
+        
+        <table id="ratingTable">
+            <thead>
+                <tr><th>Место</th><th>Игрок</th><th>Очки</th><th>Матчи</th><th>Побед</th>
+                    <th>Последняя игра</th><th>Дней неактивности</th><th>Действия</th></tr>
+            </thead>
+            <tbody id="ratingBody"></tbody>
+        </table>
+    </div>
+    
+    <!-- Матчи -->
+    <div id="matches" class="tab-content">
+        <h2>🎮 Матчи</h2>
+        
+        <!-- Админ-контролы для добавления матчей -->
+        <div class="admin-controls" style="display: none;" id="matchesAdminControls">
+            <h4>⚙️ Добавление нового матча (только для администратора)</h4>
+            <div>
+                <label>Дата: <input type="date" id="matchDate" value=""></label><br><br>
+                <label>Игрок 1: <select id="player1"></select></label><br><br>
+                <label>Игрок 2: <select id="player2"></select></label><br><br>
+                
+                <label>Победитель: 
+                    <select id="winner">
+                        <option value="player1">Игрок 1</option>
+                        <option value="player2">Игрок 2</option>
+                        <option value="draw">Ничья</option>
+                    </select>
+                </label><br><br>
+                
+                <label>Счет: <input type="text" id="score" placeholder="3:2"></label><br><br>
+                
+                <button class="add-btn" onclick="addMatch()">✅ Добавить матч</button>
+            </div>
+        </div>
+        
+        <h3>📅 История матчей</h3>
+        <table id="matchesTable">
+            <thead>
+                <tr><th>Дата</th><th>Игрок 1</th><th>Игрок 2</th><th>Победитель</th>
+                    <th>Счет</th><th>Изменения</th><th>Действия</th></tr>
+            </thead>
+            <tbody id="matchesBody"></tbody>
+        </table>
+    </div>
+    
+    <!-- Статистика -->
+    <div id="stats" class="tab-content">
+        <h2>📊 Статистика по периодам</h2>
+        
+        <div>
+            <label>Выберите игрока: <select id="statsPlayerSelect" onchange="updatePeriodStats()"></select></label>
+            <label>Год: 
+                <select id="statsYear" onchange="updatePeriodStats()">
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                </select>
+            </label>
+        </div>
+        
+        <div class="period-stats">
+            <div class="period-box">
+                <h3>📅 Статистика за неделю</h3>
+                <div id="weekStats">Выберите игрока</div>
+            </div>
+            
+            <div class="period-box">
+                <h3>📅 Статистика за месяц</h3>
+                <div id="monthStats">Выберите игрока</div>
+            </div>
+            
+            <div class="period-box">
+                <h3>📅 Статистика за год</h3>
+                <div id="yearStats">Выберите игрока</div>
+            </div>
+        </div>
+        
+        <h3>📈 Прогресс за год</h3>
+        <div id="yearProgress" style="height: 200px; background: #f5f5f5; padding: 10px;"></div>
+        
+        <h3>🔥 Топ-5 игроков года</h3>
+        <div id="topYearPlayers"></div>
+        
+        <!-- Сравнение игроков -->
+        <h3>⚖️ Сравнение игроков</h3>
+        <div class="comparison">
+            <div>
+                <h4>Выберите игроков для сравнения:</h4>
+                <label>Игрок 1: <select id="comparePlayer1"></select></label><br><br>
+                <label>Игрок 2: <select id="comparePlayer2"></select></label><br><br>
+                <button onclick="comparePlayers()">🔍 Сравнить</button>
+            </div>
+            
+            <div id="comparisonResult" style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+                <p>Выберите двух игроков и нажмите "Сравнить"</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Штрафы -->
+    <div id="penalties" class="tab-content">
+        <h2>⚠️ Система штрафов (-60 за 8+ дней)</h2>
+        
+        <!-- Админ-контролы для штрафов -->
+        <div class="admin-controls" style="display: none;" id="penaltiesAdminControls">
+            <h4>⚙️ Управление штрафами (только для администратора)</h4>
+            <button class="penalty-btn" onclick="checkAndApplyPenalties()">
+                🔍 Проверить и применить авто-штрафы
+            </button>
+        </div>
+        
+        <h3>История штрафов</h3>
+        <table id="penaltiesHistory">
+            <thead>
+                <tr><th>Дата</th><th>Игрок</th><th>Штраф</th><th>Причина</th></tr>
+            </thead>
+            <tbody id="penaltiesHistoryBody"></tbody>
+        </table>
+    </div>
+    
+    <!-- Игроки -->
+    <div id="players" class="tab-content">
+        <h2>👥 Игроки</h2>
+        
+        <!-- Админ-контролы для игроков -->
+        <div class="admin-controls" style="display: none;" id="playersAdminControls">
+            <h4>⚙️ Управление игроками (только для администратора)</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h5>Добавить нового игрока</h5>
+                    <label>Имя: <input type="text" id="newPlayerName" placeholder="Новый игрок"></label><br><br>
+                    <label>Аватар (ссылка): <input type="text" id="newPlayerAvatar" placeholder="https://i.pravatar.cc/150?img=1"></label><br><br>
+                    <label>Начальный рейтинг: <input type="number" id="newPlayerRating" value="1000"></label><br><br>
+                    
+                    <button class="add-btn" onclick="addPlayer()">➕ Добавить игрока</button>
+                </div>
+            </div>
+        </div>
+        
+        <h3>Список игроков</h3>
+        <table id="playersTable">
+            <thead>
+                <tr><th>Аватар</th><th>Имя</th><th>Рейтинг</th><th>Матчи</th><th>Побед</th><th>Действия</th></tr>
+            </thead>
+            <tbody id="playersBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+    // === НАСТРОЙКИ ===
+    const ADMIN_PASSWORD = "admin123"; // Пароль для админа
+    
+    // === ДАННЫЕ ===
+    let players = {
+        "Игорь": { 
+            rating: 1000, matches: 0, wins: 0, lastGame: null, 
+            joinDate: new Date(), penalties: 0,
+            avatar: "https://i.pravatar.cc/150?img=1",
+            ratingHistory: []
+        },
+        "Сергей": { 
+            rating: 1000, matches: 0, wins: 0, lastGame: null, 
+            joinDate: new Date(), penalties: 0,
+            avatar: "https://i.pravatar.cc/150?img=5",
+            ratingHistory: []
+        },
+        "Рома": { 
+            rating: 1000, matches: 0, wins: 0, lastGame: null, 
+            joinDate: new Date(), penalties: 0,
+            avatar: "https://i.pravatar.cc/150?img=10",
+            ratingHistory: []
+        },
+        "Александр": { 
+            rating: 1000, matches: 0, wins: 0, lastGame: null, 
+            joinDate: new Date(), penalties: 0,
+            avatar: "https://i.pravatar.cc/150?img=15",
+            ratingHistory: []
+        },
+        "Евгений": { 
+            rating: 1000, matches: 0, wins: 0, lastGame: null, 
+            joinDate: new Date(), penalties: 0,
+            avatar: "https://i.pravatar.cc/150?img=20",
+            ratingHistory: []
+        }
+    };
+    
+    let matches = [];
+    let penaltyLog = [];
+    let isAdmin = false;
+    
+    // === ФУНКЦИИ АДМИНИСТРИРОВАНИЯ ===
+    function loginAdmin() {
+        const password = document.getElementById('adminPassword').value;
+        
+        if (password === ADMIN_PASSWORD) {
+            isAdmin = true;
+            document.body.classList.add('admin-active');
+            document.getElementById('loginPanel').style.display = 'none';
+            
+            // Показываем админ-контролы
+            document.getElementById('ratingAdminControls').style.display = 'block';
+            document.getElementById('matchesAdminControls').style.display = 'block';
+            document.getElementById('penaltiesAdminControls').style.display = 'block';
+            document.getElementById('playersAdminControls').style.display = 'block';
+            
+            // Сохраняем в localStorage
+            localStorage.setItem('tennisAdmin', 'true');
+            
+            alert("✅ Вы вошли как администратор!");
+            updateAllDisplays();
+        } else {
+            alert("❌ Неверный пароль!");
+        }
+    }
+    
+    function logoutAdmin() {
+        isAdmin = false;
+        document.body.classList.remove('admin-active');
+        document.getElementById('loginPanel').style.display = 'block';
+        
+        // Скрываем админ-контролы
+        document.getElementById('ratingAdminControls').style.display = 'none';
+        document.getElementById('matchesAdminControls').style.display = 'none';
+        document.getElementById('penaltiesAdminControls').style.display = 'none';
+        document.getElementById('playersAdminControls').style.display = 'none';
+        
+        // Удаляем из localStorage
+        localStorage.removeItem('tennisAdmin');
+        
+        alert("👋 Вы вышли из режима администратора");
+        updateAllDisplays();
+    }
+    
+    function checkAutoLogin() {
+        const saved = localStorage.getItem('tennisAdmin');
+        if (saved === 'true') {
+            // Автоматический вход
+            isAdmin = true;
+            document.body.classList.add('admin-active');
+            document.getElementById('loginPanel').style.display = 'none';
+            document.getElementById('ratingAdminControls').style.display = 'block';
+            document.getElementById('matchesAdminControls').style.display = 'block';
+            document.getElementById('penaltiesAdminControls').style.display = 'block';
+            document.getElementById('playersAdminControls').style.display = 'block';
+        }
+    }
+    
+    // === ИНИЦИАЛИЗАЦИЯ ===
+    function init() {
+        loadFromStorage();
+        updatePlayerSelects();
+        updateAllDisplays();
+        setMatchDateToToday();
+        checkAutoLogin();
+    }
+    
+    function setMatchDateToToday() {
+        document.getElementById('matchDate').value = new Date().toISOString().split('T')[0];
+    }
+    
+    // === ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ===
+    function updateRatingTable() {
+        const tbody = document.getElementById('ratingBody');
+        tbody.innerHTML = '';
+        
+        const sortedPlayers = Object.entries(players)
+            .sort(([,a], [,b]) => b.rating - a.rating);
+        
+        sortedPlayers.forEach(([name, data], index) => {
+            const daysInactive = data.lastGame ? 
+                Math.floor((new Date() - data.lastGame) / (1000 * 60 * 60 * 24)) : 
+                Math.floor((new Date() - data.joinDate) / (1000 * 60 * 60 * 24));
+            
+            let status = "";
+            if (daysInactive >= 8) {
+                status = `⚠️ Штраф -${Math.floor(daysInactive / 7) * 60}`;
+            } else if (daysInactive >= 5) {
+                status = `⏳ ${8 - daysInactive} дней до штрафа`;
+            } else if (data.lastGame) {
+                status = "✅ Активен";
+            } else {
+                status = "🆕 Никогда не играл";
+            }
+            
+            const row = document.createElement('tr');
+            
+            // Для админа показываем поля ввода, для остальных - просто текст
+            if (isAdmin) {
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>
+                        <div class="player-cell">
+                            <img src="${data.avatar}" class="avatar" 
+                                 onerror="this.src='https://i.pravatar.cc/150?img=3'}">
+                            ${name}
+                        </div>
+                    </td>
+                    <td>
+                        <input type="number" class="rating-input" 
+                               value="${data.rating}" 
+                               data-player="${name}"
+                               min="0" max="3000">
+                    </td>
+                    <td>${data.matches}</td>
+                    <td>${data.wins} (${data.matches ? Math.round(data.wins/data.matches*100) : 0}%)</td>
+                    <td>${data.lastGame ? data.lastGame.toLocaleDateString() : 'Никогда'}</td>
+                    <td>${daysInactive}</td>
+                    <td>
+                        <button class="penalty-btn" onclick="applyManualPenalty('${name}')">-60</button>
+                    </td>
+                `;
+            } else {
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>
+                        <div class="player-cell">
+                            <img src="${data.avatar}" class="avatar" 
+                                 onerror="this.src='https://i.pravatar.cc/150?img=3'}">
+                            ${name}
+                        </div>
+                    </td>
+                    <td><strong>${data.rating}</strong></td>
+                    <td>${data.matches}</td>
+                    <td>${data.wins} (${data.matches ? Math.round(data.wins/data.matches*100) : 0}%)</td>
+                    <td>${data.lastGame ? data.lastGame.toLocaleDateString() : 'Никогда'}</td>
+                    <td>${daysInactive}</td>
+                    <td>${status}</td>
+                `;
+            }
+            tbody.appendChild(row);
+        });
+    }
+    
+    function updateMatchesTable() {
+        const tbody = document.getElementById('matchesBody');
+        tbody.innerHTML = '';
+        
+        const sortedMatches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        sortedMatches.forEach(match => {
+            const row = document.createElement('tr');
+            
+            // Для админа показываем кнопку удаления
+            const deleteButton = isAdmin ? 
+                `<td><button class="delete-btn" onclick="deleteMatch(${match.id})">🗑️</button></td>` : 
+                `<td>-</td>`;
+            
+            row.innerHTML = `
+                <td>${new Date(match.date).toLocaleDateString()}</td>
+                <td>
+                    <div class="player-cell">
+                        <img src="${players[match.player1]?.avatar}" 
+                             class="avatar" style="width: 30px; height: 30px;"
+                             onerror="this.src='https://i.pravatar.cc/150?img=3'}">
+                        ${match.player1}
+                    </div>
+                </td>
+                <td>
+                    <div class="player-cell">
+                        <img src="${players[match.player2]?.avatar}" 
+                             class="avatar" style="width: 30px; height: 30px;"
+                             onerror="this.src='https://i.pravatar.cc/150?img=3'}">
+                        ${match.player2}
+                    </div>
+                </td>
+                <td>${match.winner === 'draw' ? 'Ничья' : match.winner}</td>
+                <td>${match.score || '-'}</td>
+                <td>${match.player1}: ${match.change1 > 0 ? '+' : ''}${match.change1}<br>
+                    ${match.player2}: ${match.change2 > 0 ? '+' : ''}${match.change2}</td>
+                ${deleteButton}
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    function updatePlayersTable() {
+        const tbody = document.getElementById('playersBody');
+        tbody.innerHTML = '';
+        
+        Object.entries(players).forEach(([name, data]) => {
+            const row = document.createElement('tr');
+            
+            // Для админа показываем кнопку смены аватарки и удаления
+            const actionsCell = isAdmin ? 
+                `<td>
+                    <button onclick="changeAvatar('${name}')" style="margin-right: 5px;">🖼️</button>
+                    <button class="delete-btn" onclick="removePlayer('${name}')">🗑️</button>
+                </td>` :
+                `<td>-</td>`;
+            
+            row.innerHTML = `
+                <td><img src="${data.avatar}" class="avatar" 
+                       onerror="this.src='https://i.pravatar.cc/150?img=3'}"></td>
+                <td>${name}</td>
+                <td>${data.rating}</td>
+                <td>${data.matches}</td>
+                <td>${data.wins} (${data.matches ? Math.round(data.wins/data.matches*100) : 0}%)</td>
+                ${actionsCell}
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    // === ОСНОВНЫЕ ФУНКЦИИ С ПРОВЕРКОЙ ПРАВ ===
+    function addMatch() {
+        if (!isAdmin) {
+            alert("❌ Только администратор может вносить матчи!");
+            return;
+        }
+        
+        const date = document.getElementById('matchDate').value;
+        const p1 = document.getElementById('player1').value;
+        const p2 = document.getElementById('player2').value;
+        const winner = document.getElementById('winner').value;
+        const score = document.getElementById('score').value;
+        
+        if (!p1 || !p2) {
+            alert("Выберите обоих игроков!");
+            return;
+        }
+        
+        if (p1 === p2) {
+            alert("Игроки должны быть разными!");
+            return;
+        }
+        
+        const matchDate = new Date(date);
+        const realWinner = winner === 'player1' ? p1 : winner === 'player2' ? p2 : 'draw';
+        
+        // Расчет рейтинга
+        const k = 32;
+        const r1 = players[p1].rating;
+        const r2 = players[p2].rating;
+        
+        const e1 = 1 / (1 + Math.pow(10, (r2 - r1) / 400));
+        const e2 = 1 / (1 + Math.pow(10, (r1 - r2) / 400));
+        
+        let s1, s2;
+        if (realWinner === p1) {
+            s1 = 1; s2 = 0;
+            players[p1].wins++;
+        } else if (realWinner === p2) {
+            s1 = 0; s2 = 1;
+            players[p2].wins++;
+        } else {
+            s1 = 0.5; s2 = 0.5;
+        }
+        
+        const change1 = Math.round(k * (s1 - e1));
+        const change2 = Math.round(k * (s2 - e2));
+        
+        // Сохраняем старый рейтинг в историю
+        players[p1].ratingHistory.push({
+            date: new Date(matchDate),
+            rating: players[p1].rating,
+            change: change1,
+            matchId: Date.now()
+        });
+        
+        players[p2].ratingHistory.push({
+            date: new Date(matchDate),
+            rating: players[p2].rating,
+            change: change2,
+            matchId: Date.now()
+        });
+        
+        // Обновляем рейтинги
+        players[p1].rating += change1;
+        players[p2].rating += change2;
+        players[p1].matches++;
+        players[p2].matches++;
+        players[p1].lastGame = matchDate;
+        players[p2].lastGame = matchDate;
+        
+        // Сохраняем матч
+        matches.push({
+            id: Date.now(),
+            date: matchDate,
+            player1: p1,
+            player2: p2,
+            winner: realWinner,
+            change1: change1,
+            change2: change2,
+            score: score
+        });
+        
+        // Обновляем отображение
+        updateAllDisplays();
+        saveToStorage();
+        setMatchDateToToday();
+        document.getElementById('score').value = '';
+        
+        alert(`Матч добавлен! ${p1}: ${change1 > 0 ? '+' : ''}${change1}, ${p2}: ${change2 > 0 ? '+' : ''}${change2}`);
+    }
+    
+    function saveManualRatings() {
+        if (!isAdmin) {
+            alert("❌ Только администратор может изменять рейтинг!");
+            return;
+        }
+        
+        const inputs = document.querySelectorAll('.rating-input');
+        let changes = [];
+        
+        inputs.forEach(input => {
+            const playerName = input.dataset.player;
+            const newRating = parseInt(input.value);
+            
+            if (!isNaN(newRating) && players[playerName]) {
+                const oldRating = players[playerName].rating;
+                if (newRating !== oldRating) {
+                    players[playerName].rating = newRating;
+                    changes.push(`${playerName}: ${oldRating} → ${newRating}`);
+                    
+                    players[playerName].ratingHistory.push({
+                        date: new Date(),
+                        rating: newRating,
+                        change: newRating - oldRating,
+                        manual: true
+                    });
+                }
+            }
+        });
+        
+        if (changes.length > 0) {
+            updateAllDisplays();
+            saveToStorage();
+            alert("Изменения сохранены:\n" + changes.join('\n'));
+        } else {
+            alert("Нет изменений для сохранения");
+        }
+    }
+    
+    function applyManualPenalty(playerName) {
+        if (!isAdmin) {
+            alert("❌ Только администратор может применять штрафы!");
+            return;
+        }
+        
+        const player = players[playerName];
+        const now = new Date();
+        const daysInactive = player.lastGame ? 
+            Math.floor((now - player.lastGame) / (1000 * 60 * 60 * 24)) : 
+            Math.floor((now - player.joinDate) / (1000 * 60 * 60 * 24));
+        
+        if (daysInactive < 8) {
+            if (!confirm(`Игрок ${playerName} неактивен только ${daysInactive} дней (меньше 8). Всё равно применить штраф -60?`)) return;
+        }
+        
+        player.rating -= 60;
+        player.penalties += 60;
+        
+        const penaltyRecord = {
+            date: now,
+            player: playerName,
+            amount: 60,
+            daysInactive: daysInactive,
+            manual: true
+        };
+        
+        penaltyLog.push(penaltyRecord);
+        player.lastPenaltyCheck = now;
+        
+        updateAllDisplays();
+        saveToStorage();
+        alert(`Штраф -60 очков применен для ${playerName}`);
+    }
+    
+    function checkAndApplyPenalties() {
+        if (!isAdmin) {
+            alert("❌ Только администратор может применять штрафы!");
+            return;
+        }
+        
+        const now = new Date();
+        let penalizedPlayers = [];
+        
+        Object.keys(players).forEach(player => {
+            const playerData = players[player];
+            
+            if (playerData.lastGame) {
+                const daysInactive = Math.floor((now - playerData.lastGame) / (1000 * 60 * 60 * 24));
+                
+                if (daysInactive >= 8) {
+                    const penaltyWeeks = Math.floor(daysInactive / 7);
+                    const penaltyAmount = penaltyWeeks * 60;
+                    
+                    playerData.rating -= penaltyAmount;
+                    playerData.penalties += penaltyAmount;
+                    
+                    const penaltyRecord = {
+                        date: now,
+                        player: player,
+                        amount: penaltyAmount,
+                        daysInactive: daysInactive
+                    };
+                    
+                    penaltyLog.push(penaltyRecord);
+                    penalizedPlayers.push({
+                        name: player,
+                        days: daysInactive,
+                        penalty: penaltyAmount
+                    });
+                    
+                    playerData.lastPenaltyCheck = now;
+                }
+            }
+        });
+        
+        if (penalizedPlayers.length > 0) {
+            let message = "Применены штрафы:\n\n";
+            penalizedPlayers.forEach(p => {
+                message += `${p.name}: -${p.penalty} очков (${p.days} дней неактивности)\n`;
+            });
+            
+            alert(message);
+            updateAllDisplays();
+            saveToStorage();
+        } else {
+            alert("Нет игроков для штрафа. Все играли менее 8 дней назад.");
+        }
+    }
+    
+    function addPlayer() {
+        if (!isAdmin) {
+            alert("❌ Только администратор может добавлять игроков!");
+            return;
+        }
+        
+        const name = document.getElementById('newPlayerName').value.trim();
+        const avatar = document.getElementById('newPlayerAvatar').value.trim();
+        const rating = parseInt(document.getElementById('newPlayerRating').value) || 1000;
+        
+        if (!name) {
+            alert("Введите имя игрока!");
+            return;
+        }
+        
+        if (players[name]) {
+            alert("Игрок с таким именем уже существует!");
+            return;
+        }
+        
+        players[name] = { 
+            rating: rating, 
+            matches: 0, 
+            wins: 0, 
+            lastGame: null, 
+            joinDate: new Date(),
+            penalties: 0,
+            avatar: avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`,
+            ratingHistory: []
+        };
+        
+        updatePlayerSelects();
+        updateAllDisplays();
+        saveToStorage();
+        
+        document.getElementById('newPlayerName').value = '';
+        document.getElementById('newPlayerAvatar').value = '';
+        document.getElementById('newPlayerRating').value = 1000;
+        
+        alert(`Игрок ${name} добавлен!`);
+    }
+    
+    function removePlayer(name) {
+        if (!isAdmin) {
+            alert("❌ Только администратор может удалять игроков!");
+            return;
+        }
+        
+        if (!confirm(`Удалить игрока ${name}? Все его матчи также будут удалены.`)) return;
+        
+        delete players[name];
+        matches = matches.filter(m => m.player1 !== name && m.player2 !== name);
+        penaltyLog = penaltyLog.filter(p => p.player !== name);
+        
+        updatePlayerSelects();
+        updateAllDisplays();
+        saveToStorage();
+    }
+    
+    function deleteMatch(matchId) {
+        if (!isAdmin) {
+            alert("❌ Только администратор может удалять матчи!");
+            return;
+        }
+        
+        if (!confirm("Удалить этот матч? Рейтинги будут пересчитаны.")) return;
+        
+        const matchIndex = matches.findIndex(m => m.id === matchId);
+        if (matchIndex === -1) return;
+        
+        const match = matches[matchIndex];
+        
+        players[match.player1].rating -= match.change1;
+        players[match.player2].rating -= match.change2;
+        players[match.player1].matches--;
+        players[match.player2].matches--;
+        
+        if (match.winner === match.player1) players[match.player1].wins--;
+        else if (match.winner === match.player2) players[match.player2].wins--;
+        
+        matches.splice(matchIndex, 1);
+        
+        updateAllDisplays();
+        saveToStorage();
+    }
+    
+    function changeAvatar(playerName) {
+        if (!isAdmin) {
+            alert("❌ Только администратор может менять аватарки!");
+            return;
+        }
+        
+        const newUrl = prompt(`Введите новую ссылку на аватарку для ${playerName}:`, players[playerName].avatar);
+        if (newUrl) {
+            players[playerName].avatar = newUrl;
+            updateAllDisplays();
+            saveToStorage();
+            alert("Аватарка изменена!");
+        }
+    }
+    
+    // === ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) ===
+    function updatePlayerSelects() {
+        const selects = ['player1', 'player2', 'statsPlayerSelect', 'comparePlayer1', 'comparePlayer2'];
+        const playerNames = Object.keys(players).sort();
+        
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            const currentValue = select.value;
+            
+            select.innerHTML = '<option value="">Выберите игрока</option>';
+            
+            playerNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
+            
+            if (players[currentValue]) {
+                select.value = currentValue;
+            }
+        });
+    }
+    
+    function updateAllDisplays() {
+        updateRatingTable();
+        updateMatchesTable();
+        updatePlayersTable();
+        updatePenaltiesHistory();
+        updatePeriodStats();
+    }
+    
+    function updatePenaltiesHistory() {
+        const tbody = document.getElementById('penaltiesHistoryBody');
+        tbody.innerHTML = '';
+        
+        const sortedLog = [...penaltyLog].sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        sortedLog.forEach(record => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${new Date(record.date).toLocaleDateString()}</td>
+                <td>${record.player}</td>
+                <td class="danger">-${record.amount}</td>
+                <td>${record.daysInactive} дней неактивности${record.manual ? ' (вручную)' : ''}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    function updatePeriodStats() {
+        const playerName = document.getElementById('statsPlayerSelect').value;
+        const year = parseInt(document.getElementById('statsYear').value);
+        
+        if (!playerName) {
+            document.getElementById('weekStats').innerHTML = "Выберите игрока";
+            document.getElementById('monthStats').innerHTML = "Выберите игрока";
+            document.getElementById('yearStats').innerHTML = "Выберите игрока";
+            return;
+        }
+        
+        const player = players[playerName];
+        const now = new Date();
+        
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const weekMatches = matches.filter(m => 
+            (m.player1 === playerName || m.player2 === playerName) && 
+            m.date >= weekAgo
+        );
+        const weekWins = weekMatches.filter(m => m.winner === playerName).length;
+        const weekRatingChange = calculateRatingChange(playerName, weekAgo, now);
+        
+        document.getElementById('weekStats').innerHTML = `
+            <p>Матчей: ${weekMatches.length}</p>
+            <p>Побед: ${weekWins} (${weekMatches.length ? Math.round(weekWins/weekMatches.length*100) : 0}%)</p>
+            <p>Изменение рейтинга: ${weekRatingChange > 0 ? '+' : ''}${weekRatingChange}</p>
+            <p>Активность: ${weekMatches.length > 0 ? '🔥' : '💤'}</p>
+        `;
+        
+        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        const monthMatches = matches.filter(m => 
+            (m.player1 === playerName || m.player2 === playerName) && 
+            m.date >= monthAgo
+        );
+        const monthWins = monthMatches.filter(m => m.winner === playerName).length;
+        const monthRatingChange = calculateRatingChange(playerName, monthAgo, now);
+        
+        document.getElementById('monthStats').innerHTML = `
+            <p>Матчей: ${monthMatches.length}</p>
+            <p>Побед: ${monthWins} (${monthMatches.length ? Math.round(monthWins/monthMatches.length*100) : 0}%)</p>
+            <p>Изменение рейтинга: ${monthRatingChange > 0 ? '+' : ''}${monthRatingChange}</p>
+            <p>Среднее в неделю: ${Math.round(monthMatches.length / 4)} матчей</p>
+        `;
+        
+        const yearStart = new Date(year, 0, 1);
+        const yearEnd = new Date(year, 11, 31);
+        const yearMatches = matches.filter(m => 
+            (m.player1 === playerName || m.player2 === playerName) && 
+            m.date >= yearStart && m.date <= yearEnd
+        );
+        const yearWins = yearMatches.filter(m => m.winner === playerName).length;
+        const yearRatingChange = calculateRatingChange(playerName, yearStart, yearEnd);
+        
+        document.getElementById('yearStats').innerHTML = `
+            <p>Матчей: ${yearMatches.length}</p>
+            <p>Побед: ${yearWins} (${yearMatches.length ? Math.round(yearWins/yearMatches.length*100) : 0}%)</p>
+            <p>Изменение рейтинга: ${yearRatingChange > 0 ? '+' : ''}${yearRatingChange}</p>
+            <p>Месяцев активен: ${getActiveMonths(playerName, year)}</p>
+        `;
+        
+        updateTopYearPlayers(year);
+    }
+    
+    function calculateRatingChange(playerName, startDate, endDate) {
+        const player = players[playerName];
+        if (!player.ratingHistory || player.ratingHistory.length === 0) return 0;
+        
+        const startHistory = player.ratingHistory
+            .filter(h => h.date <= startDate)
+            .sort((a, b) => b.date - a.date);
+        
+        const startRating = startHistory.length > 0 ? startHistory[0].rating : 1000;
+        
+        const endHistory = player.ratingHistory
+            .filter(h => h.date <= endDate)
+            .sort((a, b) => b.date - a.date);
+        
+        const endRating = endHistory.length > 0 ? endHistory[0].rating : player.rating;
+        
+        return endRating - startRating;
+    }
+    
+    function getActiveMonths(playerName, year) {
+        const yearMatches = matches.filter(m => 
+            (m.player1 === playerName || m.player2 === playerName) && 
+            m.date.getFullYear() === year
+        );
+        
+        const activeMonths = new Set();
+        yearMatches.forEach(m => {
+            activeMonths.add(m.date.getMonth());
+        });
+        
+        return activeMonths.size;
+    }
+    
+    function updateTopYearPlayers(year) {
+        const yearMatches = matches.filter(m => 
+            m.date.getFullYear() === year
+        );
+        
+        const yearRatings = {};
+        
+        Object.keys(players).forEach(player => {
+            const playerMatches = yearMatches.filter(m => 
+                m.player1 === player || m.player2 === player
+            );
+            
+            if (playerMatches.length > 0) {
+                const wins = playerMatches.filter(m => m.winner === player).length;
+                yearRatings[player] = wins * 10 + playerMatches.length * 5;
+            }
+        });
+        
+        const sorted = Object.entries(yearRatings)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 5);
+        
+        let html = '<table style="width: 100%;">';
+        sorted.forEach(([name, points], index) => {
+            const playerMatches = yearMatches.filter(m => 
+                m.player1 === name || m.player2 === name
+            );
+            const wins = playerMatches.filter(m => m.winner === name).length;
+            
+            html += `
+                <tr>
+                    <td>${index + 1}.</td>
+                    <td>${name}</td>
+                    <td>${wins}/${playerMatches.length} побед</td>
+                    <td>${Math.round(wins/playerMatches.length*100)}%</td>
+                    <td>${points} очков</td>
+                </tr>
+            `;
+        });
+        html += '</table>';
+        
+        document.getElementById('topYearPlayers').innerHTML = html;
+    }
+    
+    function comparePlayers() {
+        const p1 = document.getElementById('comparePlayer1').value;
+        const p2 = document.getElementById('comparePlayer2').value;
+        
+        if (!p1 || !p2) {
+            alert("Выберите обоих игроков!");
+            return;
+        }
+        
+        if (p1 === p2) {
+            alert("Выберите разных игроков!");
+            return;
+        }
+        
+        const player1 = players[p1];
+        const player2 = players[p2];
+        
+        const headToHead = matches.filter(m => 
+            (m.player1 === p1 && m.player2 === p2) || 
+            (m.player1 === p2 && m.player2 === p1)
+        );
+        
+        const p1Wins = headToHead.filter(m => m.winner === p1).length;
+        const p2Wins = headToHead.filter(m => m.winner === p2).length;
+        const draws = headToHead.filter(m => m.winner === 'draw').length;
+        
+        const p1TotalMatches = player1.matches;
+        const p2TotalMatches = player2.matches;
+        const p1WinRate = p1TotalMatches ? Math.round(player1.wins / p1TotalMatches * 100) : 0;
+        const p2WinRate = p2TotalMatches ? Math.round(player2.wins / p2TotalMatches * 100) : 0;
+        
+        let lastMatchInfo = "Не играли";
+        if (headToHead.length > 0) {
+            const lastMatch = headToHead.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            lastMatchInfo = `${new Date(lastMatch.date).toLocaleDateString()}: ${lastMatch.winner} победил ${lastMatch.score ? `со счетом ${lastMatch.score}` : ''}`;
+        }
+        
+        const resultDiv = document.getElementById('comparisonResult');
+        resultDiv.innerHTML = `
+            <h4>${p1} vs ${p2}</h4>
+            <div style="display: flex; justify-content: space-around; margin: 15px 0;">
+                <div style="text-align: center;">
+                    <img src="${player1.avatar}" class="avatar" style="width: 60px; height: 60px;">
+                    <h3>${p1}</h3>
+                    <p><strong>${player1.rating}</strong> очков</p>
+                    <p>${player1.wins}/${p1TotalMatches} побед</p>
+                    <p>${p1WinRate}% побед</p>
+                </div>
+                
+                <div style="text-align: center; padding-top: 20px;">
+                    <div style="font-size: 24px;">VS</div>
+                    <div style="font-size: 18px; margin-top: 10px;">${p1Wins}-${p2Wins}-${draws}</div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <img src="${player2.avatar}" class="avatar" style="width: 60px; height: 60px;">
+                    <h3>${p2}</h3>
+                    <p><strong>${player2.rating}</strong> очков</p>
+                    <p>${player2.wins}/${p2TotalMatches} побед</p>
+                    <p>${p2WinRate}% побед</p>
+                </div>
+            </div>
+            
+            <div style="background: #f5f5f5; padding: 10px; border-radius: 5px;">
+                <p><strong>Личные встречи:</strong> ${headToHead.length} матчей</p>
+                <p><strong>Победы ${p1}:</strong> ${p1Wins} (${headToHead.length ? Math.round(p1Wins/headToHead.length*100) : 0}%)</p>
+                <p><strong>Победы ${p2}:</strong> ${p2Wins} (${headToHead.length ? Math.round(p2Wins/headToHead.length*100) : 0}%)</p>
+                <p><strong>Ничьи:</strong> ${draws}</p>
+                <p><strong>Последняя встреча:</strong> ${lastMatchInfo}</p>
+                <p><strong>Разница в рейтинге:</strong> ${Math.abs(player1.rating - player2.rating)} очков</p>
+            </div>
+        `;
+    }
+    
+    function openTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('visible');
+        });
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        document.getElementById(tabName).classList.add('visible');
+        event.currentTarget.classList.add('active');
+    }
+    
+    function saveToStorage() {
+        const data = {
+            players: players,
+            matches: matches,
+            penaltyLog: penaltyLog,
+            version: '5.0'
+        };
+        localStorage.setItem('tennisRatingFinal', JSON.stringify(data));
+    }
+    
+    function loadFromStorage() {
+        const saved = localStorage.getItem('tennisRatingFinal');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.players) players = data.players;
+                if (data.matches) {
+                    matches = data.matches.map(m => ({
+                        ...m,
+                        date: new Date(m.date)
+                    }));
+                }
+                if (data.penaltyLog) {
+                    penaltyLog = data.penaltyLog.map(p => ({
+                        ...p,
+                        date: new Date(p.date)
+                    }));
+                }
+            } catch (e) {
+                console.log("Ошибка загрузки:", e);
+            }
+        }
+    }
+    
+    window.onload = init;
+    </script>
+</body>
+</html>
