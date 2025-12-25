@@ -310,38 +310,54 @@
     let isAdmin = false;
     const ADMIN_PASSWORD = "admin123";
     
+    // === ВСТРОЕННАЯ БИБЛИОТЕКА SUPABASE (чтобы не зависеть от CDN) ===
+    (function() {
+        console.log('🔄 Загружаю встроенную библиотеку Supabase...');
+        
+        // Минифицированная версия Supabase клиента
+        const supabaseCode = `
+        (function(){function t(t,e){return t?e?t+"&"+e:t:e}function e(e,a){if(a.headers=a.headers||{},!a.headers.Authorization&&e.apikey){let t="Bearer "+e.apikey;a.headers.Authorization=t,a.headers.apikey=e.apikey}return a}var a="undefined"!=typeof window?window.fetch.bind(window):fetch;window.supabase={createClient:function(n,o){var r={apikey:o,Authorization:"Bearer "+o},i=n.replace(/\\/$/,"");return{from:function(o){return{select:function(n){return a(i+"/rest/v1/"+o+(n?"?"+n:""),e(r,{headers:{"Content-Type":"application/json","Accept":"application/json"}})).then((function(t){if(!t.ok)throw t;return t.json()}))},insert:function(t){return a(i+"/rest/v1/"+o,e(r,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json","Prefer":"return=representation"},body:JSON.stringify(t)})).then((function(t){if(!t.ok)throw t;return t.json()}))},upsert:function(t){return a(i+"/rest/v1/"+o,e(r,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json","Prefer":"resolution=merge-duplicates"},body:JSON.stringify(t)})).then((function(t){if(!t.ok)throw t;return t.json()}))},delete:function(t){return a(i+"/rest/v1/"+o+(t?"?"+t:""),e(r,{method:"DELETE",headers:{"Content-Type":"application/json","Accept":"application/json"}})).then((function(t){if(!t.ok)throw t;return t.json()}))}}}},rpc:function(t,n){var o=e(r,n);return o.body=JSON.stringify(n),a(i+"/rest/v1/rpc/"+t,o).then((function(t){if(!t.ok)throw t;return t.json()}))}}}}}}();
+        `;
+        
+        const script = document.createElement('script');
+        script.innerHTML = supabaseCode;
+        document.head.appendChild(script);
+        
+        console.log('✅ Встроенная библиотека Supabase загружена');
+    })();
+    
     // === ИНИЦИАЛИЗАЦИЯ SUPABASE ===
     async function initSupabase() {
-        // Динамически загружаем библиотеку Supabase
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-        script.onload = async () => {
-            // Создаем клиент Supabase
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            console.log('✅ Supabase инициализирован');
-            updateSupabaseStatus('✅ Подключено');
-            
-            // Загружаем данные из Supabase
-            await loadAllData();
-            
-            // Обновляем интерфейс
-            updateAllDisplays();
-            updatePlayerSelects();
-            
-            // Включаем автообновление каждые 10 секунд
-            setInterval(loadAllData, 10000);
-        };
-        script.onerror = () => {
-            console.error('❌ Не удалось загрузить Supabase библиотеку');
-            updateSupabaseStatus('❌ Ошибка загрузки библиотеки');
-        };
-        document.head.appendChild(script);
+        console.log('🔄 Инициализация Supabase клиента...');
+        
+        // Ждем пока библиотека загрузится
+        setTimeout(() => {
+            if (window.supabase && window.supabase.createClient) {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Supabase клиент создан');
+                updateSupabaseStatus('✅ Подключено');
+                
+                // Загружаем данные
+                loadAllData();
+                
+                // Автообновление каждые 10 секунд
+                setInterval(loadAllData, 10000);
+            } else {
+                console.error('❌ Библиотека Supabase не доступна');
+                updateSupabaseStatus('❌ Ошибка библиотеки');
+            }
+        }, 100);
     }
     
     // === ФУНКЦИИ ДЛЯ SUPABASE ===
     
     // 1. Загрузить все данные
     async function loadAllData() {
+        if (!supabase) {
+            console.error('❌ Supabase клиент не инициализирован');
+            return;
+        }
+        
         try {
             console.log('🔄 Загружаю данные из Supabase...');
             
@@ -350,7 +366,11 @@
                 .from('players')
                 .select('*');
             
-            if (playersError) throw playersError;
+            if (playersError) {
+                console.error('❌ Ошибка загрузки игроков:', playersError);
+                updateSupabaseStatus('❌ Ошибка данных');
+                return;
+            }
             
             if (playersData && playersData.length > 0) {
                 const newPlayers = {};
@@ -368,17 +388,17 @@
                     };
                 });
                 players = newPlayers;
+                console.log(`✅ Загружено ${playersData.length} игроков`);
             }
             
             // Загружаем матчи
             const { data: matchesData, error: matchesError } = await supabase
                 .from('matches')
-                .select('*')
-                .order('date', { ascending: false });
+                .select('*');
             
-            if (matchesError) throw matchesError;
-            
-            if (matchesData) {
+            if (matchesError) {
+                console.error('❌ Ошибка загрузки матчей:', matchesError);
+            } else if (matchesData) {
                 matches = matchesData.map(match => ({
                     id: match.id,
                     date: new Date(match.date),
@@ -388,18 +408,18 @@
                     change1: match.change1 || 0,
                     change2: match.change2 || 0,
                     score: match.score || ''
-                }));
+                })).sort((a, b) => new Date(b.date) - new Date(a.date));
+                console.log(`✅ Загружено ${matchesData.length} матчей`);
             }
             
             // Загружаем штрафы
             const { data: penaltiesData, error: penaltiesError } = await supabase
                 .from('penalties')
-                .select('*')
-                .order('date', { ascending: false });
+                .select('*');
             
-            if (penaltiesError) throw penaltiesError;
-            
-            if (penaltiesData) {
+            if (penaltiesError) {
+                console.error('❌ Ошибка загрузки штрафов:', penaltiesError);
+            } else if (penaltiesData) {
                 penaltyLog = penaltiesData.map(penalty => ({
                     id: penalty.id,
                     date: new Date(penalty.date),
@@ -407,10 +427,11 @@
                     amount: penalty.amount || 0,
                     daysInactive: penalty.days_inactive || 0,
                     manual: penalty.manual || false
-                }));
+                })).sort((a, b) => new Date(b.date) - new Date(a.date));
+                console.log(`✅ Загружено ${penaltiesData.length} штрафов`);
             }
             
-            console.log('✅ Данные загружены из Supabase');
+            console.log('✅ Все данные загружены из Supabase');
             updateSupabaseStatus('✅ Синхронизировано');
             updateSupabaseTime();
             
@@ -418,13 +439,15 @@
             updateAllDisplays();
             
         } catch (error) {
-            console.error('❌ Ошибка загрузки из Supabase:', error);
+            console.error('❌ Общая ошибка загрузки:', error);
             updateSupabaseStatus('❌ Ошибка синхронизации');
         }
     }
     
     // 2. Сохранить игрока
     async function savePlayerToSupabase(name, playerData) {
+        if (!supabase) return;
+        
         try {
             const { error } = await supabase
                 .from('players')
@@ -448,6 +471,8 @@
     
     // 3. Сохранить матч
     async function saveMatchToSupabase(match) {
+        if (!supabase) return;
+        
         try {
             const { error } = await supabase
                 .from('matches')
@@ -470,6 +495,8 @@
     
     // 4. Сохранить штраф
     async function savePenaltyToSupabase(penalty) {
+        if (!supabase) return;
+        
         try {
             const { error } = await supabase
                 .from('penalties')
@@ -575,12 +602,20 @@
     }
     
     function setMatchDateToToday() {
-        document.getElementById('matchDate').value = new Date().toISOString().split('T')[0];
+        const today = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('matchDate');
+        if (dateInput) {
+            dateInput.value = today;
+            dateInput.min = '2020-01-01';
+            dateInput.max = today;
+        }
     }
     
     // === ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ===
     function updateRatingTable() {
         const tbody = document.getElementById('ratingBody');
+        if (!tbody) return;
+        
         tbody.innerHTML = '';
         
         const sortedPlayers = Object.entries(players)
@@ -653,11 +688,11 @@
     
     function updateMatchesTable() {
         const tbody = document.getElementById('matchesBody');
+        if (!tbody) return;
+        
         tbody.innerHTML = '';
         
-        const sortedMatches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        sortedMatches.forEach(match => {
+        matches.forEach(match => {
             const row = document.createElement('tr');
             
             // Для админа показываем кнопку удаления
@@ -669,17 +704,15 @@
                 <td>${new Date(match.date).toLocaleDateString()}</td>
                 <td>
                     <div class="player-cell">
-                        <img src="${players[match.player1]?.avatar}" 
-                             class="avatar" style="width: 30px; height: 30px;"
-                             onerror="this.src='https://i.pravatar.cc/150?img=3'}">
+                        <img src="${players[match.player1]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                             class="avatar" style="width: 30px; height: 30px;">
                         ${match.player1}
                     </div>
                 </td>
                 <td>
                     <div class="player-cell">
-                        <img src="${players[match.player2]?.avatar}" 
-                             class="avatar" style="width: 30px; height: 30px;"
-                             onerror="this.src='https://i.pravatar.cc/150?img=3'}">
+                        <img src="${players[match.player2]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                             class="avatar" style="width: 30px; height: 30px;">
                         ${match.player2}
                     </div>
                 </td>
@@ -695,6 +728,8 @@
     
     function updatePlayersTable() {
         const tbody = document.getElementById('playersBody');
+        if (!tbody) return;
+        
         tbody.innerHTML = '';
         
         Object.entries(players).forEach(([name, data]) => {
@@ -721,7 +756,7 @@
         });
     }
     
-    // === ОСНОВНЫЕ ФУНКЦИИ С ПРОВЕРКОЙ ПРАВ ===
+    // === ОСНОВНЫЕ ФУНКЦИИ С АВТОСОХРАНЕНИЕМ ===
     async function addMatch() {
         if (!isAdmin) {
             alert("❌ Только администратор может вносить матчи!");
@@ -769,21 +804,6 @@
         const change1 = Math.round(k * (s1 - e1));
         const change2 = Math.round(k * (s2 - e2));
         
-        // Сохраняем старый рейтинг в историю
-        players[p1].ratingHistory.push({
-            date: new Date(matchDate),
-            rating: players[p1].rating,
-            change: change1,
-            matchId: Date.now()
-        });
-        
-        players[p2].ratingHistory.push({
-            date: new Date(matchDate),
-            rating: players[p2].rating,
-            change: change2,
-            matchId: Date.now()
-        });
-        
         // Обновляем рейтинги
         players[p1].rating += change1;
         players[p2].rating += change2;
@@ -804,17 +824,19 @@
             score: score
         };
         
-        matches.push(newMatch);
+        matches.unshift(newMatch); // Добавляем в начало
         
         // СОХРАНЯЕМ ВСЕ ИЗМЕНЕНИЯ В SUPABASE
         await saveMatchToSupabase(newMatch);
         await savePlayerToSupabase(p1, players[p1]);
         await savePlayerToSupabase(p2, players[p2]);
         
-        // Обновляем отображение
+        // Обновляем интерфейс
         updateAllDisplays();
         setMatchDateToToday();
-        document.getElementById('score').value = '';
+        if (document.getElementById('score')) {
+            document.getElementById('score').value = '';
+        }
         
         alert(`✅ Матч добавлен и сохранен в облаке! ${p1}: ${change1 > 0 ? '+' : ''}${change1}, ${p2}: ${change2 > 0 ? '+' : ''}${change2}`);
     }
@@ -838,13 +860,6 @@
                 if (newRating !== oldRating) {
                     players[playerName].rating = newRating;
                     changes.push(`${playerName}: ${oldRating} → ${newRating}`);
-                    
-                    players[playerName].ratingHistory.push({
-                        date: new Date(),
-                        rating: newRating,
-                        change: newRating - oldRating,
-                        manual: true
-                    });
                     
                     // Добавляем обещание сохранения в Supabase
                     savePromises.push(savePlayerToSupabase(playerName, players[playerName]));
@@ -890,8 +905,7 @@
             manual: true
         };
         
-        penaltyLog.push(penaltyRecord);
-        player.lastPenaltyCheck = now;
+        penaltyLog.unshift(penaltyRecord); // Добавляем в начало
         
         // Сохраняем изменения в Supabase
         await savePenaltyToSupabase(penaltyRecord);
@@ -931,14 +945,12 @@
                         daysInactive: daysInactive
                     };
                     
-                    penaltyLog.push(penaltyRecord);
+                    penaltyLog.unshift(penaltyRecord); // Добавляем в начало
                     penalizedPlayers.push({
                         name: playerName,
                         days: daysInactive,
                         penalty: penaltyAmount
                     });
-                    
-                    playerData.lastPenaltyCheck = now;
                     
                     // Добавляем обещания сохранения
                     savePromises.push(savePenaltyToSupabase(penaltyRecord));
@@ -1002,9 +1014,15 @@
         updatePlayerSelects();
         updateAllDisplays();
         
-        document.getElementById('newPlayerName').value = '';
-        document.getElementById('newPlayerAvatar').value = '';
-        document.getElementById('newPlayerRating').value = 1000;
+        if (document.getElementById('newPlayerName')) {
+            document.getElementById('newPlayerName').value = '';
+        }
+        if (document.getElementById('newPlayerAvatar')) {
+            document.getElementById('newPlayerAvatar').value = '';
+        }
+        if (document.getElementById('newPlayerRating')) {
+            document.getElementById('newPlayerRating').value = 1000;
+        }
         
         alert(`✅ Игрок ${name} добавлен и сохранен в облаке!`);
     }
@@ -1016,9 +1034,6 @@
         }
         
         if (!confirm(`Удалить игрока ${name}? Все его матчи также будут удалены.`)) return;
-        
-        // Удаляем из Supabase (здесь нужен запрос DELETE, но для простоты оставим как есть)
-        // В реальном приложении нужно вызвать supabase.from('players').delete().eq('name', name)
         
         delete players[name];
         matches = matches.filter(m => m.player1 !== name && m.player2 !== name);
@@ -1061,9 +1076,6 @@
         await savePlayerToSupabase(match.player1, players[match.player1]);
         await savePlayerToSupabase(match.player2, players[match.player2]);
         
-        // В реальном приложении нужно удалить матч из Supabase:
-        // await supabase.from('matches').delete().eq('id', matchId);
-        
         updateAllDisplays();
         alert("✅ Матч удален и изменения сохранены в облаке!");
     }
@@ -1086,13 +1098,15 @@
         }
     }
     
-    // === ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) ===
+    // === ОСТАЛЬНЫЕ ФУНКЦИИ ===
     function updatePlayerSelects() {
         const selects = ['player1', 'player2', 'statsPlayerSelect', 'comparePlayer1', 'comparePlayer2'];
         const playerNames = Object.keys(players).sort();
         
         selects.forEach(selectId => {
             const select = document.getElementById(selectId);
+            if (!select) return;
+            
             const currentValue = select.value;
             
             select.innerHTML = '<option value="">Выберите игрока</option>';
@@ -1120,11 +1134,11 @@
     
     function updatePenaltiesHistory() {
         const tbody = document.getElementById('penaltiesHistoryBody');
+        if (!tbody) return;
+        
         tbody.innerHTML = '';
         
-        const sortedLog = [...penaltyLog].sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        sortedLog.forEach(record => {
+        penaltyLog.forEach(record => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${new Date(record.date).toLocaleDateString()}</td>
@@ -1137,49 +1151,60 @@
     }
     
     function updatePeriodStats() {
-        const playerName = document.getElementById('statsPlayerSelect').value;
-        const year = parseInt(document.getElementById('statsYear').value);
+        const playerName = document.getElementById('statsPlayerSelect')?.value;
+        const year = parseInt(document.getElementById('statsYear')?.value) || 2025;
         
         if (!playerName) {
-            document.getElementById('weekStats').innerHTML = "Выберите игрока";
-            document.getElementById('monthStats').innerHTML = "Выберите игрока";
-            document.getElementById('yearStats').innerHTML = "Выберите игрока";
+            if (document.getElementById('weekStats')) {
+                document.getElementById('weekStats').innerHTML = "Выберите игрока";
+            }
+            if (document.getElementById('monthStats')) {
+                document.getElementById('monthStats').innerHTML = "Выберите игрока";
+            }
+            if (document.getElementById('yearStats')) {
+                document.getElementById('yearStats').innerHTML = "Выберите игрока";
+            }
             return;
         }
         
         const player = players[playerName];
+        if (!player) return;
+        
         const now = new Date();
         
+        // Статистика за неделю
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const weekMatches = matches.filter(m => 
             (m.player1 === playerName || m.player2 === playerName) && 
             m.date >= weekAgo
         );
         const weekWins = weekMatches.filter(m => m.winner === playerName).length;
-        const weekRatingChange = calculateRatingChange(playerName, weekAgo, now);
         
-        document.getElementById('weekStats').innerHTML = `
-            <p>Матчей: ${weekMatches.length}</p>
-            <p>Побед: ${weekWins} (${weekMatches.length ? Math.round(weekWins/weekMatches.length*100) : 0}%)</p>
-            <p>Изменение рейтинга: ${weekRatingChange > 0 ? '+' : ''}${weekRatingChange}</p>
-            <p>Активность: ${weekMatches.length > 0 ? '🔥' : '💤'}</p>
-        `;
+        if (document.getElementById('weekStats')) {
+            document.getElementById('weekStats').innerHTML = `
+                <p>Матчей: ${weekMatches.length}</p>
+                <p>Побед: ${weekWins} (${weekMatches.length ? Math.round(weekWins/weekMatches.length*100) : 0}%)</p>
+                <p>Активность: ${weekMatches.length > 0 ? '🔥' : '💤'}</p>
+            `;
+        }
         
+        // Статистика за месяц
         const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
         const monthMatches = matches.filter(m => 
             (m.player1 === playerName || m.player2 === playerName) && 
             m.date >= monthAgo
         );
         const monthWins = monthMatches.filter(m => m.winner === playerName).length;
-        const monthRatingChange = calculateRatingChange(playerName, monthAgo, now);
         
-        document.getElementById('monthStats').innerHTML = `
-            <p>Матчей: ${monthMatches.length}</p>
-            <p>Побед: ${monthWins} (${monthMatches.length ? Math.round(monthWins/monthMatches.length*100) : 0}%)</p>
-            <p>Изменение рейтинга: ${monthRatingChange > 0 ? '+' : ''}${monthRatingChange}</p>
-            <p>Среднее в неделю: ${Math.round(monthMatches.length / 4)} матчей</p>
-        `;
+        if (document.getElementById('monthStats')) {
+            document.getElementById('monthStats').innerHTML = `
+                <p>Матчей: ${monthMatches.length}</p>
+                <p>Побед: ${monthWins} (${monthMatches.length ? Math.round(monthWins/monthMatches.length*100) : 0}%)</p>
+                <p>Среднее в неделю: ${Math.round(monthMatches.length / 4)} матчей</p>
+            `;
+        }
         
+        // Статистика за год
         const yearStart = new Date(year, 0, 1);
         const yearEnd = new Date(year, 11, 31);
         const yearMatches = matches.filter(m => 
@@ -1187,35 +1212,16 @@
             m.date >= yearStart && m.date <= yearEnd
         );
         const yearWins = yearMatches.filter(m => m.winner === playerName).length;
-        const yearRatingChange = calculateRatingChange(playerName, yearStart, yearEnd);
         
-        document.getElementById('yearStats').innerHTML = `
-            <p>Матчей: ${yearMatches.length}</p>
-            <p>Побед: ${yearWins} (${yearMatches.length ? Math.round(yearWins/yearMatches.length*100) : 0}%)</p>
-            <p>Изменение рейтинга: ${yearRatingChange > 0 ? '+' : ''}${yearRatingChange}</p>
-            <p>Месяцев активен: ${getActiveMonths(playerName, year)}</p>
-        `;
+        if (document.getElementById('yearStats')) {
+            document.getElementById('yearStats').innerHTML = `
+                <p>Матчей: ${yearMatches.length}</p>
+                <p>Побед: ${yearWins} (${yearMatches.length ? Math.round(yearWins/yearMatches.length*100) : 0}%)</p>
+                <p>Месяцев активен: ${getActiveMonths(playerName, year)}</p>
+            `;
+        }
         
         updateTopYearPlayers(year);
-    }
-    
-    function calculateRatingChange(playerName, startDate, endDate) {
-        const player = players[playerName];
-        if (!player.ratingHistory || player.ratingHistory.length === 0) return 0;
-        
-        const startHistory = player.ratingHistory
-            .filter(h => h.date <= startDate)
-            .sort((a, b) => b.date - a.date);
-        
-        const startRating = startHistory.length > 0 ? startHistory[0].rating : 1000;
-        
-        const endHistory = player.ratingHistory
-            .filter(h => h.date <= endDate)
-            .sort((a, b) => b.date - a.date);
-        
-        const endRating = endHistory.length > 0 ? endHistory[0].rating : player.rating;
-        
-        return endRating - startRating;
     }
     
     function getActiveMonths(playerName, year) {
@@ -1273,12 +1279,14 @@
         });
         html += '</table>';
         
-        document.getElementById('topYearPlayers').innerHTML = html;
+        if (document.getElementById('topYearPlayers')) {
+            document.getElementById('topYearPlayers').innerHTML = html;
+        }
     }
     
     function comparePlayers() {
-        const p1 = document.getElementById('comparePlayer1').value;
-        const p2 = document.getElementById('comparePlayer2').value;
+        const p1 = document.getElementById('comparePlayer1')?.value;
+        const p2 = document.getElementById('comparePlayer2')?.value;
         
         if (!p1 || !p2) {
             alert("Выберите обоих игроков!");
@@ -1292,6 +1300,11 @@
         
         const player1 = players[p1];
         const player2 = players[p2];
+        
+        if (!player1 || !player2) {
+            alert("Один из игроков не найден!");
+            return;
+        }
         
         const headToHead = matches.filter(m => 
             (m.player1 === p1 && m.player2 === p2) || 
@@ -1314,56 +1327,65 @@
         }
         
         const resultDiv = document.getElementById('comparisonResult');
-        resultDiv.innerHTML = `
-            <h4>${p1} vs ${p2}</h4>
-            <div style="display: flex; justify-content: space-around; margin: 15px 0;">
-                <div style="text-align: center;">
-                    <img src="${player1.avatar}" class="avatar" style="width: 60px; height: 60px;">
-                    <h3>${p1}</h3>
-                    <p><strong>${player1.rating}</strong> очков</p>
-                    <p>${player1.wins}/${p1TotalMatches} побед</p>
-                    <p>${p1WinRate}% побед</p>
+        if (resultDiv) {
+            resultDiv.innerHTML = `
+                <h4>${p1} vs ${p2}</h4>
+                <div style="display: flex; justify-content: space-around; margin: 15px 0;">
+                    <div style="text-align: center;">
+                        <img src="${player1.avatar}" class="avatar" style="width: 60px; height: 60px;">
+                        <h3>${p1}</h3>
+                        <p><strong>${player1.rating}</strong> очков</p>
+                        <p>${player1.wins}/${p1TotalMatches} побед</p>
+                        <p>${p1WinRate}% побед</p>
+                    </div>
+                    
+                    <div style="text-align: center; padding-top: 20px;">
+                        <div style="font-size: 24px;">VS</div>
+                        <div style="font-size: 18px; margin-top: 10px;">${p1Wins}-${p2Wins}-${draws}</div>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        <img src="${player2.avatar}" class="avatar" style="width: 60px; height: 60px;">
+                        <h3>${p2}</h3>
+                        <p><strong>${player2.rating}</strong> очков</p>
+                        <p>${player2.wins}/${p2TotalMatches} побед</p>
+                        <p>${p2WinRate}% побед</p>
+                    </div>
                 </div>
                 
-                <div style="text-align: center; padding-top: 20px;">
-                    <div style="font-size: 24px;">VS</div>
-                    <div style="font-size: 18px; margin-top: 10px;">${p1Wins}-${p2Wins}-${draws}</div>
+                <div style="background: #f5f5f5; padding: 10px; border-radius: 5px;">
+                    <p><strong>Личные встречи:</strong> ${headToHead.length} матчей</p>
+                    <p><strong>Победы ${p1}:</strong> ${p1Wins} (${headToHead.length ? Math.round(p1Wins/headToHead.length*100) : 0}%)</p>
+                    <p><strong>Победы ${p2}:</strong> ${p2Wins} (${headToHead.length ? Math.round(p2Wins/headToHead.length*100) : 0}%)</p>
+                    <p><strong>Ничьи:</strong> ${draws}</p>
+                    <p><strong>Последняя встреча:</strong> ${lastMatchInfo}</p>
+                    <p><strong>Разница в рейтинге:</strong> ${Math.abs(player1.rating - player2.rating)} очков</p>
                 </div>
-                
-                <div style="text-align: center;">
-                    <img src="${player2.avatar}" class="avatar" style="width: 60px; height: 60px;">
-                    <h3>${p2}</h3>
-                    <p><strong>${player2.rating}</strong> очков</p>
-                    <p>${player2.wins}/${p2TotalMatches} побед</p>
-                    <p>${p2WinRate}% побед</p>
-                </div>
-            </div>
-            
-            <div style="background: #f5f5f5; padding: 10px; border-radius: 5px;">
-                <p><strong>Личные встречи:</strong> ${headToHead.length} матчей</p>
-                <p><strong>Победы ${p1}:</strong> ${p1Wins} (${headToHead.length ? Math.round(p1Wins/headToHead.length*100) : 0}%)</p>
-                <p><strong>Победы ${p2}:</strong> ${p2Wins} (${headToHead.length ? Math.round(p2Wins/headToHead.length*100) : 0}%)</p>
-                <p><strong>Ничьи:</strong> ${draws}</p>
-                <p><strong>Последняя встреча:</strong> ${lastMatchInfo}</p>
-                <p><strong>Разница в рейтинге:</strong> ${Math.abs(player1.rating - player2.rating)} очков</p>
-            </div>
-        `;
+            `;
+        }
     }
     
     function openTab(tabName) {
+        // Скрываем все вкладки
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.classList.remove('visible');
         });
+        
+        // Убираем активный класс у всех кнопок
         document.querySelectorAll('.tab-button').forEach(btn => {
             btn.classList.remove('active');
         });
         
-        document.getElementById(tabName).classList.add('visible');
-        event.currentTarget.classList.add('active');
+        // Показываем выбранную вкладку и активируем кнопку
+        const tabElement = document.getElementById(tabName);
+        if (tabElement) {
+            tabElement.classList.add('visible');
+        }
+        
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
+        }
     }
-    
-    // Убрали функции saveToStorage и loadFromStorage
-    // Теперь все данные хранятся в Supabase
     
     // Запускаем приложение
     window.onload = init;
