@@ -53,7 +53,149 @@
             line-height: 1.4;
         }
         
-        /* Стили для панелей внизу */
+        /* Стили для блока достижений */
+        .achievements-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .achievements-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+        
+        .achievements-header h3 {
+            font-size: 1.4em;
+            margin: 0;
+        }
+        
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        @media (min-width: 768px) {
+            .achievements-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .achievement-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .achievement-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .achievement-player {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .achievement-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .achievement-player-info {
+            flex: 1;
+        }
+        
+        .achievement-player-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .achievement-player-rating {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .achievement-level {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        
+        .level-icon {
+            font-size: 1.8em;
+        }
+        
+        .level-title {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .level-description {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-top: 8px;
+            padding: 8px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .achievement-congrats {
+            background: rgba(76, 175, 80, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid #4CAF50;
+            font-style: italic;
+        }
+        
+        .levels-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .levels-info h4 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .levels-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .level-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* Остальные стили остаются без изменений */
         .bottom-panels {
             padding: 15px;
             background: #f8f9fa;
@@ -654,6 +796,10 @@
             .bottom-panels {
                 padding: 12px;
             }
+            
+            .achievements-grid {
+                grid-template-columns: 1fr;
+            }
         }
         
         /* Стили для улучшения читаемости на мобильных */
@@ -761,6 +907,34 @@
                     </thead>
                     <tbody id="ratingBody"></tbody>
                 </table>
+            </div>
+            
+            <!-- БЛОК ДОСТИЖЕНИЙ И ПООЩРЕНИЙ - НОВЫЙ КОД -->
+            <div class="achievements-container" id="achievementsContainer">
+                <div class="achievements-header">
+                    <div class="level-icon">🏆</div>
+                    <h3>Система достижений</h3>
+                </div>
+                
+                <div id="achievementsContent">
+                    <!-- Здесь будет динамически генерироваться контент -->
+                    <p>Определение достижений игроков...</p>
+                </div>
+                
+                <div class="levels-info">
+                    <h4>🎯 Уровни мастерства</h4>
+                    <p>Каждый игрок может достичь следующих уровней:</p>
+                    <div class="levels-list">
+                        <div class="level-badge">🥉 1100 - Начинающий чемпион</div>
+                        <div class="level-badge">🥈 1300 - Опытный боец</div>
+                        <div class="level-badge">🥇 1500 - Мастер стола</div>
+                        <div class="level-badge">👑 2000 - Легенда лиги</div>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.9;">
+                        <strong>Как это работает:</strong> Система автоматически определяет достижения по текущему рейтингу игроков. 
+                        Данные обновляются в реальном времени при каждом изменении рейтинга.
+                    </p>
+                </div>
             </div>
         </div>
         
@@ -1006,6 +1180,180 @@
     let penaltyLog = [];
     let isAdmin = false;
     const ADMIN_PASSWORD = "admin123";
+    
+    // ============================================
+    // СИСТЕМА ДОСТИЖЕНИЙ - НОВЫЙ КОД
+    // ============================================
+    
+    // Уровни достижений
+    const ACHIEVEMENT_LEVELS = [
+        { threshold: 2000, name: "Легенда лиги", icon: "👑", color: "#FFD700", description: "Невероятное мастерство! Ты вошел в историю лиги как истинная легенда настольного тенниса." },
+        { threshold: 1500, name: "Мастер стола", icon: "🥇", color: "#FF9800", description: "Великолепная игра! Твои навыки поражают всех соперников на столе." },
+        { threshold: 1300, name: "Опытный боец", icon: "🥈", color: "#C0C0C0", description: "Серьезный уровень! Ты показываешь стабильно высокие результаты в каждой игре." },
+        { threshold: 1100, name: "Начинающий чемпион", icon: "🥉", color: "#CD7F32", description: "Отличный старт! Ты уже опережаешь многих игроков и показываешь большой потенциал." }
+    ];
+    
+    // Определить достижения игрока
+    function getPlayerAchievements(playerName, playerData) {
+        const achievements = [];
+        const rating = playerData.rating;
+        
+        ACHIEVEMENT_LEVELS.forEach(level => {
+            if (rating >= level.threshold) {
+                achievements.push({
+                    ...level,
+                    achieved: true,
+                    playerName: playerName,
+                    playerData: playerData
+                });
+            }
+        });
+        
+        // Определить следующий уровень, если есть
+        const nextLevel = ACHIEVEMENT_LEVELS.find(level => rating < level.threshold);
+        if (nextLevel && achievements.length < ACHIEVEMENT_LEVELS.length) {
+            achievements.push({
+                ...nextLevel,
+                achieved: false,
+                playerName: playerName,
+                playerData: playerData,
+                pointsNeeded: nextLevel.threshold - rating
+            });
+        }
+        
+        return achievements;
+    }
+    
+    // Получить всех игроков с достижениями
+    function getAllAchievements() {
+        const allAchievements = [];
+        
+        Object.entries(players).forEach(([name, data]) => {
+            const playerAchievements = getPlayerAchievements(name, data);
+            if (playerAchievements.length > 0) {
+                allAchievements.push({
+                    playerName: name,
+                    playerData: data,
+                    achievements: playerAchievements
+                });
+            }
+        });
+        
+        // Сортируем по самому высокому достижению
+        allAchievements.sort((a, b) => {
+            const aMax = Math.max(...a.achievements.filter(ach => ach.achieved).map(ach => ach.threshold));
+            const bMax = Math.max(...b.achievements.filter(ach => ach.achieved).map(ach => ach.threshold));
+            return bMax - aMax;
+        });
+        
+        return allAchievements;
+    }
+    
+    // Обновить отображение достижений
+    function updateAchievementsDisplay() {
+        const container = document.getElementById('achievementsContent');
+        if (!container) return;
+        
+        const allAchievements = getAllAchievements();
+        
+        if (allAchievements.length === 0) {
+            container.innerHTML = `
+                <p style="text-align: center; padding: 20px; font-size: 1.1em;">
+                    🎾 Игроки еще не достигли уровней мастерства. 
+                    Играйте больше матчей и повышайте рейтинг!
+                </p>
+            `;
+            return;
+        }
+        
+        let html = '<div class="achievements-grid">';
+        
+        // Показываем только топовые достижения (первые 4)
+        const topAchievements = allAchievements.slice(0, 4);
+        
+        topAchievements.forEach(playerAchievement => {
+            const highestAchieved = playerAchievement.achievements
+                .filter(ach => ach.achieved)
+                .sort((a, b) => b.threshold - a.threshold)[0];
+            
+            const nextToAchieve = playerAchievement.achievements
+                .filter(ach => !ach.achieved)[0];
+            
+            if (highestAchieved) {
+                html += `
+                    <div class="achievement-card">
+                        <div class="achievement-player">
+                            <img src="${playerAchievement.playerData.avatar}" 
+                                 class="achievement-avatar" 
+                                 onerror="this.src='https://i.pravatar.cc/150?img=3'}">
+                            <div class="achievement-player-info">
+                                <div class="achievement-player-name">${playerAchievement.playerName}</div>
+                                <div class="achievement-player-rating">Рейтинг: ${playerAchievement.playerData.rating} очков</div>
+                            </div>
+                        </div>
+                        
+                        <div class="achievement-level">
+                            <div class="level-icon" style="color: ${highestAchieved.color}">${highestAchieved.icon}</div>
+                            <div class="level-title" style="color: ${highestAchieved.color}">
+                                ${highestAchieved.name} (${highestAchieved.threshold}+)
+                            </div>
+                        </div>
+                        
+                        <div class="level-description">
+                            ${highestAchieved.description}
+                        </div>
+                        
+                        ${nextToAchieve ? `
+                            <div class="achievement-congrats">
+                                <strong>Следующая цель:</strong> ${nextToAchieve.name} (${nextToAchieve.threshold} очков)
+                                <br>Осталось набрать: ${nextToAchieve.pointsNeeded} очков
+                            </div>
+                        ` : `
+                            <div class="achievement-congrats">
+                                <strong>🏆 Максимальный уровень достигнут!</strong>
+                                <br>Ты достиг вершины мастерства в нашей лиге!
+                            </div>
+                        `}
+                    </div>
+                `;
+            }
+        });
+        
+        html += '</div>';
+        
+        // Добавляем статистику
+        const totalPlayers = Object.keys(players).length;
+        const playersWithAchievements = allAchievements.filter(p => 
+            p.achievements.some(a => a.achieved)
+        ).length;
+        
+        if (totalPlayers > 0) {
+            html += `
+                <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                    <h4>📊 Статистика достижений</h4>
+                    <p>Игроков с достижениями: ${playersWithAchievements} из ${totalPlayers} (${Math.round(playersWithAchievements/totalPlayers*100)}%)</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+            `;
+            
+            ACHIEVEMENT_LEVELS.forEach(level => {
+                const playersAtLevel = allAchievements.filter(p => 
+                    p.achievements.some(a => a.achieved && a.threshold === level.threshold)
+                ).length;
+                
+                if (playersAtLevel > 0) {
+                    html += `
+                        <div style="background: ${level.color}20; padding: 5px 10px; border-radius: 15px; border: 1px solid ${level.color}50;">
+                            ${level.icon} ${level.name}: ${playersAtLevel} игроков
+                        </div>
+                    `;
+                }
+            });
+            
+            html += `</div></div>`;
+        }
+        
+        container.innerHTML = html;
+    }
     
     // ============================================
     // ИНИЦИАЛИЗАЦИЯ SUPABASE
@@ -1459,6 +1807,9 @@
             }
             tbody.appendChild(row);
         });
+        
+        // Обновляем блок достижений после обновления таблицы
+        updateAchievementsDisplay();
     }
     
     // 2. Обновить таблицу матчей
@@ -2050,6 +2401,7 @@
         updatePeriodStats();
         updateYearProgressChart();
         updatePlayerSelects();
+        updateAchievementsDisplay(); // НОВОЕ: обновляем достижения
     }
     
     // Обновить статистику по периодам
