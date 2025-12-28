@@ -605,6 +605,14 @@
             margin-bottom: 30px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             border: 2px solid #4CAF50;
+            max-height: 70px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .tournament-generator.expanded {
+            max-height: 1000px;
+            overflow: visible;
         }
         
         .generator-header {
@@ -614,7 +622,18 @@
             margin-bottom: 20px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 10px;
+            cursor: pointer;
+        }
+        
+        .generator-header .toggle-icon {
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+        
+        .tournament-generator.expanded .generator-header .toggle-icon {
+            transform: rotate(180deg);
         }
         
         .generator-grid {
@@ -806,14 +825,21 @@
         
         .match-result {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
             padding: 12px 15px;
             background: white;
             border-radius: 8px;
             margin-bottom: 10px;
             border: 1px solid #e0e0e0;
             transition: all 0.3s ease;
+        }
+        
+        @media (min-width: 768px) {
+            .match-result {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
         }
         
         .match-result:hover {
@@ -829,8 +855,25 @@
         
         .match-players {
             display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            margin-bottom: 15px;
+        }
+        
+        @media (min-width: 768px) {
+            .match-players {
+                flex-direction: row;
+                align-items: center;
+                gap: 15px;
+                margin-bottom: 0;
+            }
+        }
+        
+        .player-match-info {
+            display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
             flex: 1;
         }
         
@@ -838,22 +881,46 @@
             font-weight: bold;
             color: #666;
             margin: 0 10px;
+            text-align: center;
+            padding: 5px 0;
+        }
+        
+        @media (min-width: 768px) {
+            .match-vs {
+                margin: 0 10px;
+            }
         }
         
         .match-score {
             background: #4CAF50;
             color: white;
-            padding: 5px 15px;
+            padding: 8px 15px;
             border-radius: 20px;
             font-weight: bold;
             min-width: 60px;
             text-align: center;
+            margin-top: 10px;
+            align-self: center;
+        }
+        
+        @media (min-width: 768px) {
+            .match-score {
+                margin-top: 0;
+                align-self: auto;
+            }
         }
         
         .match-details {
             font-size: 0.9em;
             color: #666;
             margin-top: 5px;
+            text-align: center;
+        }
+        
+        @media (min-width: 768px) {
+            .match-details {
+                text-align: left;
+            }
         }
         
         /* Стили для сетки турнира */
@@ -1954,8 +2021,9 @@
             
             <!-- Генератор турниров -->
             <div class="tournament-generator" id="tournamentGenerator">
-                <div class="generator-header">
+                <div class="generator-header" onclick="toggleTournamentGenerator()">
                     <span>🎲 Генератор турниров</span>
+                    <span class="toggle-icon">▼</span>
                 </div>
                 
                 <div class="generator-grid">
@@ -2146,6 +2214,12 @@
     // ============================================
     // НОВЫЕ ФУНКЦИИ ДЛЯ ТУРНИРОВ
     // ============================================
+    
+    // Функция для переключения состояния генератора турниров
+    function toggleTournamentGenerator() {
+        const generator = document.getElementById('tournamentGenerator');
+        generator.classList.toggle('expanded');
+    }
     
     // Функция для загрузки турниров из Supabase
     async function loadTournaments() {
@@ -2738,7 +2812,7 @@
         // Отображаем турнирную сетку
         displayTournamentBracket(tournament);
         
-        // Отображаем все матчи турнира
+        // Отображаем все матчи турнира (адаптировано для телефона)
         displayTournamentMatches(tournament);
         
         // Сохраняем ID текущего турнира для загрузки фото
@@ -2998,7 +3072,7 @@
         }
     }
     
-    // Функция для отображения всех матчей турнира
+    // Функция для отображения всех матчей турнира (АДАПТИРОВАНА ДЛЯ ТЕЛЕФОНА)
     function displayTournamentMatches(tournament) {
         const container = document.getElementById('tournamentMatchesList');
         if (!container) return;
@@ -3025,14 +3099,14 @@
             html += `
                 <div class="match-result ${match.is_final ? 'final' : ''}">
                     <div class="match-players">
-                        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                        <div class="player-match-info">
                             <img src="${player1?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
-                                 style="width: 40px; height: 40px; border-radius: 50%;"
-                                 onclick="showPlayerProfile('${match.player1}')" style="cursor: pointer;">
-                            <div>
-                                <div style="font-weight: bold;">${match.player1 || 'TBD'}</div>
+                                 style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;"
+                                 onclick="showPlayerProfile('${match.player1}')">
+                            <div style="flex: 1;">
+                                <div style="font-weight: bold; font-size: 14px;">${match.player1 || 'TBD'}</div>
                                 ${match.player1_games !== undefined ? `
-                                    <div class="match-details">
+                                    <div class="match-details" style="font-size: 12px;">
                                         Партии: ${match.player1_games}, Очки: ${match.player1_points || 0}
                                     </div>
                                 ` : ''}
@@ -3041,30 +3115,30 @@
                         
                         <div class="match-vs">vs</div>
                         
-                        <div style="display: flex; align-items: center; gap: 10px; flex: 1; justify-content: flex-end;">
-                            <div style="text-align: right;">
-                                <div style="font-weight: bold;">${match.player2 || 'TBD'}</div>
+                        <div class="player-match-info">
+                            <div style="flex: 1; text-align: right;">
+                                <div style="font-weight: bold; font-size: 14px;">${match.player2 || 'TBD'}</div>
                                 ${match.player2_games !== undefined ? `
-                                    <div class="match-details">
+                                    <div class="match-details" style="font-size: 12px; text-align: right;">
                                         Партии: ${match.player2_games}, Очки: ${match.player2_points || 0}
                                     </div>
                                 ` : ''}
                             </div>
                             <img src="${player2?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
-                                 style="width: 40px; height: 40px; border-radius: 50%;"
-                                 onclick="showPlayerProfile('${match.player2}')" style="cursor: pointer;">
+                                 style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer; margin-left: 10px;"
+                                 onclick="showPlayerProfile('${match.player2}')">
                         </div>
                     </div>
                     
-                    <div style="text-align: center; min-width: 120px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; margin-top: 10px;">
                         ${match.score ? `
                             <div class="match-score">${match.score}</div>
-                            <div class="match-details">
+                            <div class="match-details" style="text-align: center;">
                                 ${match.is_final ? 'ФИНАЛ' : `Раунд ${match.round}`}
                                 ${match.winner ? ` · Победитель: ${match.winner}` : ''}
                             </div>
                         ` : `
-                            <div style="padding: 5px 15px; background: #ff9800; color: white; border-radius: 20px; font-weight: bold;">
+                            <div style="padding: 5px 15px; background: #ff9800; color: white; border-radius: 20px; font-weight: bold; font-size: 13px;">
                                 ⏳ Ожидается
                             </div>
                         `}
