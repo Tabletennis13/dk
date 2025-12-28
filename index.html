@@ -2106,7 +2106,7 @@
                         Пока никого нет. Выберите игроков выше.
                     </div>
                     <div class="tournament-actions">
-                        <button class="action-btn add-btn" onclick="generateTournament()">
+                        <button class="action-btn add-btn" onclick="generateTournamentBracket()" id="generateTournamentBtn">
                             🎯 Сгенерировать турнир
                         </button>
                         <button class="action-btn penalty-btn" onclick="resetTournament()">
@@ -2766,13 +2766,20 @@
     }
     
     // ============================================
-    // УЛУЧШЕННАЯ ГЕНЕРАЦИЯ ТУРНИРА ДЛЯ 3 ИГРОКОВ
+    // ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ ГЕНЕРАЦИИ ТУРНИРА
     // ============================================
     
-    // Генерировать турнир
-    function generateTournament() {
+    // Генерация турнирной сетки - ИСПРАВЛЕННАЯ ВЕРСИЯ
+    function generateTournamentBracket() {
+        console.log('🔄 Функция generateTournamentBracket вызвана');
+        
         const tournamentName = document.getElementById('tournamentName').value.trim();
         const tournamentDate = document.getElementById('tournamentDate').value;
+        
+        console.log('Название турнира:', tournamentName);
+        console.log('Дата турнира:', tournamentDate);
+        console.log('Количество игроков:', tournamentPlayers.length);
+        console.log('Список игроков:', tournamentPlayers);
         
         if (!tournamentName) {
             showNotification('Введите название турнира!', 'error');
