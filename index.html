@@ -886,6 +886,63 @@
             text-align: center;
         }
         
+        /* НОВЫЕ СТИЛИ ДЛЯ РАЗДЕЛЕНИЯ МАТЧЕЙ ПО ДНЯМ */
+        .match-day-header {
+            background-color: #f0f7ff;
+            color: #1976d2;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 12px 15px;
+            border-left: 4px solid #1976d2;
+            margin: 15px 0 8px 0;
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .match-day-header .day-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .match-day-header .day-date {
+            font-weight: 600;
+        }
+        
+        .match-day-header .match-count {
+            background: #1976d2;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: normal;
+        }
+        
+        .match-day-group {
+            margin-bottom: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+        }
+        
+        .match-day-group table {
+            margin: 0;
+            border-radius: 0;
+            min-width: 600px;
+        }
+        
+        .match-day-group table tr:first-child td {
+            border-top: none;
+        }
+        
+        .match-day-group table tr:last-child td {
+            border-bottom: none;
+        }
+        
         /* Медиа-запросы для адаптации */
         @media (min-width: 481px) {
             body {
@@ -1051,6 +1108,24 @@
             
             .achievements-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            /* Адаптация для разделения матчей по дням на мобильных */
+            .match-day-header {
+                padding: 10px 12px;
+                font-size: 14px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .match-day-header .day-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .match-day-header .match-count {
+                font-size: 12px;
             }
         }
         
@@ -1243,21 +1318,8 @@
         
         <div class="tab-content" id="matches">
             <h2>🎮 История матчей</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Дата</th>
-                            <th>Игрок 1</th>
-                            <th>Игрок 2</th>
-                            <th>Победитель</th>
-                            <th>Счет</th>
-                            <th>Изменения</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="matchesBody"></tbody>
-                </table>
+            <div id="matchesContainer">
+                <!-- Матчи будут сгруппированы по дням здесь -->
             </div>
             
             <!-- Блок добавления матча ПЕРЕМЕЩЕН СЮДА -->
@@ -2464,6 +2526,161 @@
     }
     
     // ============================================
+    // ОБНОВЛЁННАЯ ФУНКЦИЯ: Обновить таблицу матчей с группировкой по дням
+    // ============================================
+    function updateMatchesTable() {
+        const container = document.getElementById('matchesContainer');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (matches.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 25px; background: #f8f9fa; border-radius: 10px; margin: 15px 0;">
+                    <h3 style="font-size: 16px; margin-bottom: 10px;">🎾 Матчей пока нет</h3>
+                    <p style="font-size: 14px;">Войдите как администратор и добавьте первый матч</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Группируем матчи по дням
+        const matchesByDay = {};
+        
+        matches.forEach(match => {
+            const dateKey = match.date.toDateString(); // Получаем строку даты без времени
+            if (!matchesByDay[dateKey]) {
+                matchesByDay[dateKey] = [];
+            }
+            matchesByDay[dateKey].push(match);
+        });
+        
+        // Сортируем дни по дате (новые сверху)
+        const sortedDays = Object.keys(matchesByDay).sort((a, b) => {
+            return new Date(b) - new Date(a);
+        });
+        
+        // Для каждого дня создаём отдельную группу
+        sortedDays.forEach(dayKey => {
+            const dayMatches = matchesByDay[dayKey];
+            const dayDate = new Date(dayKey);
+            
+            // Форматируем дату для отображения
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            let displayDate;
+            if (dayDate.toDateString() === today.toDateString()) {
+                displayDate = 'Сегодня';
+            } else if (dayDate.toDateString() === yesterday.toDateString()) {
+                displayDate = 'Вчера';
+            } else {
+                displayDate = dayDate.toLocaleDateString('ru-RU', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                // Делаем первую букву заглавной
+                displayDate = displayDate.charAt(0).toUpperCase() + displayDate.slice(1);
+            }
+            
+            // Создаём контейнер для дня
+            const dayGroup = document.createElement('div');
+            dayGroup.className = 'match-day-group';
+            
+            // Заголовок дня
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'match-day-header';
+            dayHeader.innerHTML = `
+                <div class="day-info">
+                    <div class="day-date">${displayDate}</div>
+                </div>
+                <div class="match-count">${dayMatches.length} матч${getPluralForm(dayMatches.length)}</div>
+            `;
+            
+            // Таблица для матчей этого дня
+            const tableContainer = document.createElement('div');
+            tableContainer.className = 'table-container';
+            
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Время</th>
+                        <th>Игрок 1</th>
+                        <th>Игрок 2</th>
+                        <th>Победитель</th>
+                        <th>Счет</th>
+                        <th>Изменения</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${dayMatches.map(match => {
+                        const matchTime = match.date.toLocaleTimeString('ru-RU', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        const deleteButton = isAdmin ? 
+                            `<td><button class="delete-btn action-btn" onclick="deleteMatch('${match.id}')" title="Удалить матч">🗑️</button></td>` : 
+                            `<td>-</td>`;
+                        
+                        return `
+                            <tr>
+                                <td>${matchTime}</td>
+                                <td>
+                                    <div class="player-cell" onclick="showPlayerProfile('${match.player1}')" style="cursor: pointer;">
+                                        <img src="${players[match.player1]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                             class="avatar" style="width: 32px; height: 32px;">
+                                        <span>${match.player1}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="player-cell" onclick="showPlayerProfile('${match.player2}')" style="cursor: pointer;">
+                                        <img src="${players[match.player2]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                             class="avatar" style="width: 32px; height: 32px;">
+                                        <span>${match.player2}</span>
+                                    </div>
+                                </td>
+                                <td><strong>${match.winner === 'draw' ? 'Ничья' : (match.winner || '-')}</strong></td>
+                                <td>${match.score || '-'}</td>
+                                <td>
+                                    <span style="color: ${match.change1 > 0 ? '#4CAF50' : '#f44336'}">
+                                        ${match.change1 > 0 ? '+' : ''}${match.change1}
+                                    </span> / 
+                                    <span style="color: ${match.change2 > 0 ? '#4CAF50' : '#f44336'}">
+                                        ${match.change2 > 0 ? '+' : ''}${match.change2}
+                                    </span>
+                                </td>
+                                ${deleteButton}
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            `;
+            
+            tableContainer.appendChild(table);
+            dayGroup.appendChild(dayHeader);
+            dayGroup.appendChild(tableContainer);
+            container.appendChild(dayGroup);
+        });
+    }
+    
+    // Вспомогательная функция для правильного склонения
+    function getPluralForm(number) {
+        if (number % 10 === 1 && number % 100 !== 11) {
+            return '';
+        } else if (number % 10 >= 2 && number % 10 <= 4 && (number % 100 < 10 || number % 100 >= 20)) {
+            return 'а';
+        } else {
+            return 'ей';
+        }
+    }
+    
+    // ============================================
     // ОСНОВНЫЕ ФУНКЦИИ ИНТЕРФЕЙСА
     // ============================================
     
@@ -2572,64 +2789,6 @@
         updateAchievementsDisplay();
     }
     
-    // 2. Обновить таблицу матчей
-    function updateMatchesTable() {
-        const tbody = document.getElementById('matchesBody');
-        if (!tbody) return;
-        
-        tbody.innerHTML = '';
-        
-        if (matches.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 25px;">
-                        <h3 style="font-size: 16px; margin-bottom: 10px;">🎾 Матчей пока нет</h3>
-                        <p style="font-size: 14px;">Войдите как администратор и добавьте первый матч</p>
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-        
-        matches.forEach(match => {
-            const row = document.createElement('tr');
-            
-            const deleteButton = isAdmin ? 
-                `<td><button class="delete-btn action-btn" onclick="deleteMatch('${match.id}')" title="Удалить матч">🗑️</button></td>` : 
-                `<td>-</td>`;
-            
-            row.innerHTML = `
-                <td>${new Date(match.date).toLocaleDateString('ru-RU')}</td>
-                <td>
-                    <div class="player-cell" onclick="showPlayerProfile('${match.player1}')" style="cursor: pointer;">
-                        <img src="${players[match.player1]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
-                             class="avatar" style="width: 32px; height: 32px;">
-                        <span>${match.player1}</span>
-                    </div>
-                </td>
-                <td>
-                    <div class="player-cell" onclick="showPlayerProfile('${match.player2}')" style="cursor: pointer;">
-                        <img src="${players[match.player2]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
-                             class="avatar" style="width: 32px; height: 32px;">
-                        <span>${match.player2}</span>
-                    </div>
-                </td>
-                <td><strong>${match.winner === 'draw' ? 'Ничья' : (match.winner || '-')}</strong></td>
-                <td>${match.score || '-'}</td>
-                <td>
-                    <span style="color: ${match.change1 > 0 ? '#4CAF50' : '#f44336'}">
-                        ${match.change1 > 0 ? '+' : ''}${match.change1}
-                    </span> / 
-                    <span style="color: ${match.change2 > 0 ? '#4CAF50' : '#f44336'}">
-                        ${match.change2 > 0 ? '+' : ''}${match.change2}
-                    </span>
-                </td>
-                ${deleteButton}
-            `;
-            tbody.appendChild(row);
-        });
-    }
-    
     // 3. Обновить таблицу игроков
     function updatePlayersTable() {
         const tbody = document.getElementById('playersBody');
@@ -2727,6 +2886,10 @@
         }
         
         const matchDate = new Date(date);
+        // Устанавливаем текущее время для матча
+        const now = new Date();
+        matchDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+        
         const realWinner = winner === 'player1' ? p1 : winner === 'player2' ? p2 : 'draw';
         
         if (!players[p1] || !players[p2]) {
@@ -3167,7 +3330,7 @@
     // Обновить все дисплеи
     function updateAllDisplays() {
         updateRatingTable();
-        updateMatchesTable();
+        updateMatchesTable(); // Теперь использует новую функцию с группировкой
         updatePlayersTable();
         updatePenaltiesHistory();
         updatePeriodStats();
