@@ -1669,6 +1669,25 @@
             margin-top: 15px;
             flex-wrap: wrap;
         }
+        
+        /* НОВЫЙ СТИЛЬ для полей ввода счета */
+        .score-input {
+            width: 50px;
+            padding: 4px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .match-score-display {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -2347,6 +2366,8 @@
                                     <th>В</th>
                                     <th>П</th>
                                     <th>Очки</th>
+                                    <th>Разница партий</th>
+                                    <th>Разница очков</th>
                                 </tr>
                             </thead>
                             <tbody id="groupTableBody_${groupIndex}">
@@ -2359,16 +2380,17 @@
                     // Заполняем таблицу группы
                     const groupPlayers = group.players || [];
                     const sortedPlayers = [...groupPlayers].sort((a, b) => {
-                        const statsA = tournament.groupStats?.[a] || { wins: 0, losses: 0, points: 0 };
-                        const statsB = tournament.groupStats?.[b] || { wins: 0, losses: 0, points: 0 };
+                        const statsA = tournament.groupStats?.[a] || { wins: 0, losses: 0, points: 0, setsDiff: 0, pointsDiff: 0 };
+                        const statsB = tournament.groupStats?.[b] || { wins: 0, losses: 0, points: 0, setsDiff: 0, pointsDiff: 0 };
                         if (statsB.points !== statsA.points) return statsB.points - statsA.points;
                         if (statsB.wins !== statsA.wins) return statsB.wins - statsA.wins;
-                        return statsA.losses - statsB.losses;
+                        if (statsB.setsDiff !== statsA.setsDiff) return statsB.setsDiff - statsA.setsDiff;
+                        return statsB.pointsDiff - statsA.pointsDiff;
                     });
                     
                     const tableBody = document.getElementById(`groupTableBody_${groupIndex}`);
                     sortedPlayers.forEach(player => {
-                        const stats = tournament.groupStats?.[player] || { wins: 0, losses: 0, points: 0 };
+                        const stats = tournament.groupStats?.[player] || { wins: 0, losses: 0, points: 0, setsDiff: 0, pointsDiff: 0 };
                         tableBody.innerHTML += `
                             <tr>
                                 <td>${player}</td>
@@ -2376,6 +2398,8 @@
                                 <td>${stats.wins}</td>
                                 <td>${stats.losses}</td>
                                 <td><strong>${stats.points}</strong></td>
+                                <td>${stats.setsDiff > 0 ? '+' : ''}${stats.setsDiff}</td>
+                                <td>${stats.pointsDiff > 0 ? '+' : ''}${stats.pointsDiff}</td>
                             </tr>
                         `;
                     });
@@ -2742,7 +2766,7 @@
     }
     
     // ============================================
-    // УЛУЧШЕННАЯ ГЕНЕРАЦИЯ ТУРНИРА
+    // УЛУЧШЕННАЯ ГЕНЕРАЦИЯ ТУРНИРА ДЛЯ 3 ИГРОКОВ
     // ============================================
     
     // Генерировать турнир
@@ -2778,8 +2802,11 @@
         };
         
         // Определяем формат турнира в зависимости от количества участников
-        if (tournamentPlayers.length <= 4) {
-            // Для 3-4 игроков: групповой этап (каждый с каждым) + финал
+        if (tournamentPlayers.length === 3) {
+            // Для 3 игроков: круговой турнир с подсчетом партий и очков
+            generateRoundRobinForThreePlayers();
+        } else if (tournamentPlayers.length <= 4) {
+            // Для 4 игроков: групповой этап (каждый с каждым) + финал
             generateRoundRobinTournament();
         } else if (tournamentPlayers.length <= 8) {
             // Для 5-8 игроков: групповой этап + плей-офф
@@ -2796,6 +2823,329 @@
         document.getElementById('bracketSection').scrollIntoView({ behavior: 'smooth' });
         
         showNotification(`✅ Турнир "${tournamentName}" создан!`, 'success');
+    }
+    
+    // Генерация кругового турнира для 3 игроков
+    function generateRoundRobinForThreePlayers() {
+        if (tournamentPlayers.length !== 3) return;
+        
+        currentTournament.format = 'Круговой турнир (3 игрока)';
+        tournamentMatches = [];
+        
+        // Создаем матчи между всеми участниками
+        for (let i = 0; i < tournamentPlayers.length; i++) {
+            for (let j = i + 1; j < tournamentPlayers.length; j++) {
+                const matchId = `group_match_${i}_${j}`;
+                tournamentMatches.push({
+                    id: matchId,
+                    round: 1,
+                    player1: tournamentPlayers[i],
+                    player2: tournamentPlayers[j],
+                    winner: null,
+                    played: false,
+                    score: null,
+                    sets: { player1: 0, player2: 0 },
+                    points: { player1: 0, player2: 0 },
+                    group: 'A'
+                });
+            }
+        }
+        
+        currentTournament.matches = tournamentMatches;
+        
+        // Генерируем отображение кругового турнира
+        displayRoundRobinForThreePlayers();
+    }
+    
+    // Отображение кругового турнира для 3 игроков
+    function displayRoundRobinForThreePlayers() {
+        const container = document.getElementById('tournamentBracket');
+        if (!container) return;
+        
+        let html = `
+            <div class="round-robin-group">
+                <h4>Круговой турнир (3 игрока)</h4>
+                <p style="margin-bottom: 15px; color: #666;">
+                    <strong>Правила:</strong> Играется по 1 матчу с каждым. Победитель определяется по:<br>
+                    1. Количество очков (за победу - 2, за поражение - 0)<br>
+                    2. Личные встречи<br>
+                    3. Разница выигранных/проигранных партий<br>
+                    4. Разница выигранных/проигранных очков
+                </p>
+                <table class="group-table">
+                    <thead>
+                        <tr>
+                            <th>Игрок</th>
+                            <th>М</th>
+                            <th>В</th>
+                            <th>П</th>
+                            <th>Очки</th>
+                            <th>Разница партий</th>
+                            <th>Разница очков</th>
+                        </tr>
+                    </thead>
+                    <tbody id="groupStandings">
+                        <!-- Статистика будет заполнена JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <h4 style="margin-top: 30px; margin-bottom: 15px;">Матчи кругового турнира</h4>
+        `;
+        
+        // Добавляем матчи
+        tournamentMatches.forEach((match, index) => {
+            html += `
+                <div class="bracket-match" id="${match.id}">
+                    <div class="bracket-player" onclick="selectWinner('${match.id}', '${match.player1}')" id="${match.id}_p1">
+                        <span>${match.player1}</span>
+                        <span class="player-score">-</span>
+                    </div>
+                    <div class="match-score-display" id="${match.id}_score">
+                        Введите счет
+                    </div>
+                    <div class="bracket-player" onclick="selectWinner('${match.id}', '${match.player2}')" id="${match.id}_p2">
+                        <span>${match.player2}</span>
+                        <span class="player-score">-</span>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: center;">
+                        <input type="text" class="score-input" id="${match.id}_sets1" placeholder="Сеты" 
+                               onchange="updateMatchScore('${match.id}')" style="width: 60px;">
+                        <span>:</span>
+                        <input type="text" class="score-input" id="${match.id}_sets2" placeholder="Сеты"
+                               onchange="updateMatchScore('${match.id}')" style="width: 60px;">
+                        <input type="text" class="score-input" id="${match.id}_points1" placeholder="Очки" 
+                               onchange="updateMatchScore('${match.id}')" style="width: 80px;">
+                        <span>:</span>
+                        <input type="text" class="score-input" id="${match.id}_points2" placeholder="Очки"
+                               onchange="updateMatchScore('${match.id}')" style="width: 80px;">
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Добавляем финальный матч между двумя лучшими
+        const finalMatchId = 'final_match';
+        html += `
+            <h4 style="margin-top: 30px; margin-bottom: 15px;">Финальный матч</h4>
+            <div class="bracket-match" id="${finalMatchId}" style="border-color: #FFD700; background: #FFF8E1;">
+                <div class="bracket-player" onclick="selectWinner('${finalMatchId}', '${finalMatch.player1}')" id="${finalMatchId}_p1">
+                    <span>1-е место группы</span>
+                    <span class="player-score">-</span>
+                </div>
+                <div class="match-score-display" id="${finalMatchId}_score">
+                    -
+                </div>
+                <div class="bracket-player" onclick="selectWinner('${finalMatchId}', '${finalMatch.player2}')" id="${finalMatchId}_p2">
+                    <span>2-е место группы</span>
+                    <span class="player-score">-</span>
+                </div>
+            </div>
+        `;
+        
+        // Добавляем финальный матч в массив
+        const finalMatch = {
+            id: finalMatchId,
+            round: 2,
+            player1: null,
+            player2: null,
+            winner: null,
+            played: false,
+            is_final: true,
+            score: null,
+            sets: { player1: 0, player2: 0 },
+            points: { player1: 0, player2: 0 }
+        };
+        tournamentMatches.push(finalMatch);
+        
+        container.innerHTML = html;
+        
+        // Обновляем таблицу standings
+        updateGroupStandingsForThreePlayers();
+    }
+    
+    // Обновить счет матча
+    function updateMatchScore(matchId) {
+        const match = tournamentMatches.find(m => m.id === matchId);
+        if (!match) return;
+        
+        const sets1 = document.getElementById(`${matchId}_sets1`).value;
+        const sets2 = document.getElementById(`${matchId}_sets2`).value;
+        const points1 = document.getElementById(`${matchId}_points1`).value;
+        const points2 = document.getElementById(`${matchId}_points2`).value;
+        
+        // Сохраняем счет
+        match.score = `${sets1}:${sets2} (${points1}:${points2})`;
+        match.sets = { player1: parseInt(sets1) || 0, player2: parseInt(sets2) || 0 };
+        match.points = { player1: parseInt(points1) || 0, player2: parseInt(points2) || 0 };
+        
+        // Определяем победителя по сетам
+        if (match.sets.player1 > match.sets.player2) {
+            match.winner = match.player1;
+        } else if (match.sets.player2 > match.sets.player1) {
+            match.winner = match.player2;
+        } else {
+            match.winner = null;
+        }
+        
+        match.played = true;
+        
+        // Обновляем отображение
+        const scoreDisplay = document.getElementById(`${matchId}_score`);
+        if (scoreDisplay) {
+            scoreDisplay.textContent = match.score || '-';
+            scoreDisplay.style.color = '#4CAF50';
+            scoreDisplay.style.fontWeight = 'bold';
+        }
+        
+        // Обновляем standings
+        updateGroupStandingsForThreePlayers();
+        
+        // Помечаем матч как завершенный
+        const matchElement = document.getElementById(matchId);
+        if (matchElement) {
+            matchElement.classList.add('winner');
+        }
+        
+        showNotification(`✅ Счет матча сохранен: ${match.player1} ${match.sets.player1}:${match.sets.player2} ${match.player2}`, 'success');
+    }
+    
+    // Обновить таблицу standings для 3 игроков
+    function updateGroupStandingsForThreePlayers() {
+        const standingsBody = document.getElementById('groupStandings');
+        if (!standingsBody) return;
+        
+        // Считаем статистику
+        const stats = {};
+        tournamentPlayers.forEach(player => {
+            stats[player] = { 
+                matches: 0, 
+                wins: 0, 
+                losses: 0, 
+                points: 0,
+                setsWon: 0,
+                setsLost: 0,
+                setsDiff: 0,
+                pointsWon: 0,
+                pointsLost: 0,
+                pointsDiff: 0
+            };
+        });
+        
+        // Считаем только групповые матчи (без финала)
+        const groupMatches = tournamentMatches.filter(m => m.round === 1 && m.played);
+        
+        groupMatches.forEach(match => {
+            // Обновляем статистику для игрока 1
+            stats[match.player1].matches++;
+            if (match.winner === match.player1) {
+                stats[match.player1].wins++;
+                stats[match.player1].points += 2;
+            } else if (match.winner === match.player2) {
+                stats[match.player1].losses++;
+            }
+            stats[match.player1].setsWon += match.sets.player1;
+            stats[match.player1].setsLost += match.sets.player2;
+            stats[match.player1].setsDiff = stats[match.player1].setsWon - stats[match.player1].setsLost;
+            stats[match.player1].pointsWon += match.points.player1;
+            stats[match.player1].pointsLost += match.points.player2;
+            stats[match.player1].pointsDiff = stats[match.player1].pointsWon - stats[match.player1].pointsLost;
+            
+            // Обновляем статистику для игрока 2
+            stats[match.player2].matches++;
+            if (match.winner === match.player2) {
+                stats[match.player2].wins++;
+                stats[match.player2].points += 2;
+            } else if (match.winner === match.player1) {
+                stats[match.player2].losses++;
+            }
+            stats[match.player2].setsWon += match.sets.player2;
+            stats[match.player2].setsLost += match.sets.player1;
+            stats[match.player2].setsDiff = stats[match.player2].setsWon - stats[match.player2].setsLost;
+            stats[match.player2].pointsWon += match.points.player2;
+            stats[match.player2].pointsLost += match.points.player1;
+            stats[match.player2].pointsDiff = stats[match.player2].pointsWon - stats[match.player2].pointsLost;
+        });
+        
+        // Сортируем игроков по критериям:
+        // 1. Очки (points)
+        // 2. Личные встречи (head-to-head)
+        // 3. Разница партий (setsDiff)
+        // 4. Разница очков (pointsDiff)
+        const sortedPlayers = Object.entries(stats).sort(([playerA, statsA], [playerB, statsB]) => {
+            // 1. По очкам
+            if (statsB.points !== statsA.points) return statsB.points - statsA.points;
+            
+            // 2. Личные встречи
+            const headToHead = groupMatches.find(m => 
+                (m.player1 === playerA && m.player2 === playerB) || 
+                (m.player1 === playerB && m.player2 === playerA)
+            );
+            
+            if (headToHead && headToHead.winner) {
+                if (headToHead.winner === playerA) return -1;
+                if (headToHead.winner === playerB) return 1;
+            }
+            
+            // 3. Разница партий
+            if (statsB.setsDiff !== statsA.setsDiff) return statsB.setsDiff - statsA.setsDiff;
+            
+            // 4. Разница очков
+            if (statsB.pointsDiff !== statsA.pointsDiff) return statsB.pointsDiff - statsA.pointsDiff;
+            
+            return 0;
+        });
+        
+        // Обновляем таблицу
+        standingsBody.innerHTML = '';
+        sortedPlayers.forEach(([player, stat]) => {
+            standingsBody.innerHTML += `
+                <tr>
+                    <td>${player}</td>
+                    <td>${stat.matches}</td>
+                    <td>${stat.wins}</td>
+                    <td>${stat.losses}</td>
+                    <td><strong>${stat.points}</strong></td>
+                    <td>${stat.setsDiff > 0 ? '+' : ''}${stat.setsDiff}</td>
+                    <td>${stat.pointsDiff > 0 ? '+' : ''}${stat.pointsDiff}</td>
+                </tr>
+            `;
+        });
+        
+        // Обновляем финальный матч, если все групповые матчи сыграны
+        const allGroupMatches = tournamentMatches.filter(m => m.round === 1);
+        const playedGroupMatches = groupMatches.filter(m => m.played);
+        
+        if (playedGroupMatches.length === allGroupMatches.length && sortedPlayers.length >= 2) {
+            const finalMatch = tournamentMatches.find(m => m.is_final);
+            if (finalMatch) {
+                // Определяем двух лучших игроков для финала
+                const topPlayers = sortedPlayers.slice(0, 2).map(([player]) => player);
+                
+                // Обновляем финальный матч
+                finalMatch.player1 = topPlayers[0];
+                finalMatch.player2 = topPlayers[1];
+                
+                // Обновляем отображение
+                const p1Element = document.getElementById(`${finalMatch.id}_p1`);
+                const p2Element = document.getElementById(`${finalMatch.id}_p2`);
+                
+                if (p1Element) {
+                    p1Element.querySelector('span:first-child').textContent = topPlayers[0];
+                }
+                if (p2Element) {
+                    p2Element.querySelector('span:first-child').textContent = topPlayers[1];
+                }
+                
+                // Сохраняем статистику группового этапа в турнир
+                if (!currentTournament.groupStats) {
+                    currentTournament.groupStats = {};
+                }
+                sortedPlayers.forEach(([player, stat]) => {
+                    currentTournament.groupStats[player] = stat;
+                });
+            }
+        }
     }
     
     // Генерация группового этапа (каждый с каждым) для маленького количества участников
@@ -3284,40 +3634,90 @@
         }
         
         // Определяем победителя турнира
-        const finalMatch = tournamentMatches
-            .filter(m => m.played)
-            .sort((a, b) => b.round - a.round)[0];
+        let tournamentWinner = null;
         
-        if (finalMatch?.winner) {
-            currentTournament.winner = finalMatch.winner;
-            currentTournament.status = 'Завершен';
-            
-            // Записываем победу игроку
-            const winnerName = finalMatch.winner;
-            if (players[winnerName]) {
-                if (!players[winnerName].tournament_wins) {
-                    players[winnerName].tournament_wins = [];
-                }
+        // Для турнира из 3 игроков определяем победителя по круговой системе
+        if (currentTournament.format === 'Круговой турнир (3 игрока)') {
+            const finalMatch = tournamentMatches.find(m => m.is_final);
+            if (finalMatch?.winner) {
+                tournamentWinner = finalMatch.winner;
+                currentTournament.winner = tournamentWinner;
+                currentTournament.status = 'Завершен';
+            } else {
+                // Если финал не сыгран, определяем победителя по круговой системе
+                const stats = {};
+                tournamentPlayers.forEach(player => {
+                    stats[player] = { matches: 0, wins: 0, losses: 0, points: 0 };
+                });
                 
-                // Проверяем, не записана ли уже эта победа
-                const alreadyHasWin = players[winnerName].tournament_wins.some(
-                    win => win.tournament_id === currentTournament.id
-                );
+                const groupMatches = tournamentMatches.filter(m => m.round === 1 && m.played && m.winner);
+                groupMatches.forEach(match => {
+                    if (match.winner === match.player1) {
+                        stats[match.player1].wins++;
+                        stats[match.player1].points += 2;
+                    } else if (match.winner === match.player2) {
+                        stats[match.player2].wins++;
+                        stats[match.player2].points += 2;
+                    }
+                    stats[match.player1].matches++;
+                    stats[match.player2].matches++;
+                });
                 
-                if (!alreadyHasWin) {
-                    players[winnerName].tournament_wins.push({
-                        tournament_id: currentTournament.id,
-                        tournament_name: currentTournament.name,
-                        date: currentTournament.date,
-                        added_manually: false
-                    });
-                    
-                    // Сохраняем игрока
-                    await savePlayerToSupabase(winnerName, players[winnerName]);
+                // Находим игрока с максимальным количеством очков
+                let maxPoints = -1;
+                let winner = null;
+                Object.entries(stats).forEach(([player, stat]) => {
+                    if (stat.points > maxPoints) {
+                        maxPoints = stat.points;
+                        winner = player;
+                    }
+                });
+                
+                if (winner) {
+                    tournamentWinner = winner;
+                    currentTournament.winner = tournamentWinner;
+                    currentTournament.status = 'Завершен';
+                } else {
+                    currentTournament.status = 'В процессе';
                 }
             }
         } else {
-            currentTournament.status = 'В процессе';
+            // Для других форматов
+            const finalMatch = tournamentMatches
+                .filter(m => m.played)
+                .sort((a, b) => b.round - a.round)[0];
+            
+            if (finalMatch?.winner) {
+                tournamentWinner = finalMatch.winner;
+                currentTournament.winner = tournamentWinner;
+                currentTournament.status = 'Завершен';
+            } else {
+                currentTournament.status = 'В процессе';
+            }
+        }
+        
+        // Записываем победу игроку
+        if (tournamentWinner && players[tournamentWinner]) {
+            if (!players[tournamentWinner].tournament_wins) {
+                players[tournamentWinner].tournament_wins = [];
+            }
+            
+            // Проверяем, не записана ли уже эта победа
+            const alreadyHasWin = players[tournamentWinner].tournament_wins.some(
+                win => win.tournament_id === currentTournament.id
+            );
+            
+            if (!alreadyHasWin) {
+                players[tournamentWinner].tournament_wins.push({
+                    tournament_id: currentTournament.id,
+                    tournament_name: currentTournament.name,
+                    date: currentTournament.date,
+                    added_manually: false
+                });
+                
+                // Сохраняем игрока
+                await savePlayerToSupabase(tournamentWinner, players[tournamentWinner]);
+            }
         }
         
         // Сохраняем турнир в Supabase
@@ -5597,7 +5997,11 @@
         
         // Обновляем standings для групповых турниров
         if (match.round === 1 && match.group) {
-            updateGroupStandings();
+            if (currentTournament.format === 'Круговой турнир (3 игрока)') {
+                updateGroupStandingsForThreePlayers();
+            } else {
+                updateGroupStandings();
+            }
         }
         
         // Автоматически продвигаем победителя в следующий раунд для плей-офф
@@ -5675,7 +6079,7 @@
                 winner: match.winner,
                 change1: match.winner === match.player1 ? 16 : -16,
                 change2: match.winner === match.player2 ? 16 : -16,
-                score: 'турнир'
+                score: match.score || 'турнир'
             };
             
             // Добавляем в общий список матчей
