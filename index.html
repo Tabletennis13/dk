@@ -2869,6 +2869,24 @@
         const container = document.getElementById('tournamentBracket');
         if (!container) return;
         
+        // Создаем финальный матч ДО его использования
+        const finalMatchId = 'final_match';
+        const finalMatch = {
+            id: finalMatchId,
+            round: 2,
+            player1: null,
+            player2: null,
+            winner: null,
+            played: false,
+            is_final: true,
+            score: null,
+            sets: { player1: 0, player2: 0 },
+            points: { player1: 0, player2: 0 }
+        };
+        
+        // Добавляем финальный матч в массив
+        tournamentMatches.push(finalMatch);
+        
         let html = `
             <div class="round-robin-group">
                 <h4>Круговой турнир (3 игрока)</h4>
@@ -2900,8 +2918,9 @@
             <h4 style="margin-top: 30px; margin-bottom: 15px;">Матчи кругового турнира</h4>
         `;
         
-        // Добавляем матчи
-        tournamentMatches.forEach((match, index) => {
+        // Добавляем матчи (исключая финальный матч)
+        const groupMatches = tournamentMatches.filter(m => m.round === 1);
+        groupMatches.forEach((match, index) => {
             html += `
                 <div class="bracket-match" id="${match.id}">
                     <div class="bracket-player" onclick="selectWinner('${match.id}', '${match.player1}')" id="${match.id}_p1">
@@ -2932,38 +2951,22 @@
         });
         
         // Добавляем финальный матч между двумя лучшими
-        const finalMatchId = 'final_match';
         html += `
             <h4 style="margin-top: 30px; margin-bottom: 15px;">Финальный матч</h4>
             <div class="bracket-match" id="${finalMatchId}" style="border-color: #FFD700; background: #FFF8E1;">
-                <div class="bracket-player" onclick="selectWinner('${finalMatchId}', '${finalMatch.player1}')" id="${finalMatchId}_p1">
+                <div class="bracket-player" onclick="selectWinner('${finalMatchId}', 'player1')" id="${finalMatchId}_p1">
                     <span>1-е место группы</span>
                     <span class="player-score">-</span>
                 </div>
                 <div class="match-score-display" id="${finalMatchId}_score">
                     -
                 </div>
-                <div class="bracket-player" onclick="selectWinner('${finalMatchId}', '${finalMatch.player2}')" id="${finalMatchId}_p2">
+                <div class="bracket-player" onclick="selectWinner('${finalMatchId}', 'player2')" id="${finalMatchId}_p2">
                     <span>2-е место группы</span>
                     <span class="player-score">-</span>
                 </div>
             </div>
         `;
-        
-        // Добавляем финальный матч в массив
-        const finalMatch = {
-            id: finalMatchId,
-            round: 2,
-            player1: null,
-            player2: null,
-            winner: null,
-            played: false,
-            is_final: true,
-            score: null,
-            sets: { player1: 0, player2: 0 },
-            points: { player1: 0, player2: 0 }
-        };
-        tournamentMatches.push(finalMatch);
         
         container.innerHTML = html;
         
@@ -2976,10 +2979,10 @@
         const match = tournamentMatches.find(m => m.id === matchId);
         if (!match) return;
         
-        const sets1 = document.getElementById(`${matchId}_sets1`).value;
-        const sets2 = document.getElementById(`${matchId}_sets2`).value;
-        const points1 = document.getElementById(`${matchId}_points1`).value;
-        const points2 = document.getElementById(`${matchId}_points2`).value;
+        const sets1 = document.getElementById(`${matchId}_sets1`)?.value || 0;
+        const sets2 = document.getElementById(`${matchId}_sets2`)?.value || 0;
+        const points1 = document.getElementById(`${matchId}_points1`)?.value || 0;
+        const points2 = document.getElementById(`${matchId}_points2`)?.value || 0;
         
         // Сохраняем счет
         match.score = `${sets1}:${sets2} (${points1}:${points2})`;
@@ -3376,7 +3379,7 @@
         // Сохраняем группы в турнире
         currentTournament.groups = groups;
         
-        // Создаем матчи в группах
+        // Создаем матчи в группами
         groups.forEach((group, groupIndex) => {
             for (let i = 0; i < group.length; i++) {
                 for (let j = i + 1; j < group.length; j++) {
@@ -4578,7 +4581,7 @@
         
         // Для каждого дня создаём отдельную группу
         sortedDays.forEach((dayKey, dayIndex) => {
-            const dayMatches = matchesByDay[dayKey];
+            const dayMatches = matchesByDay[dateKey];
             const dayDate = new Date(dayKey);
             
             // Форматируем дату для отображения
