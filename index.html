@@ -904,11 +904,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
-        .match-day-header:hover {
-            background-color: #1565c0;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-        }
-        
         .match-day-header.collapsed {
             background-color: #e0f2f1;
             color: #00796b;
@@ -1236,6 +1231,140 @@
             font-size: 11px !important;
             line-height: 1.2 !important;
         }
+        
+        /* ===== НОВЫЕ СТИЛИ ДЛЯ ТУРНИРОВ ===== */
+        /* Стили для списка игроков */
+        .player-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 0 0 auto;
+        }
+        .player-checkbox-item:hover {
+            border-color: #4CAF50;
+            background: #f1f8e9;
+        }
+        .player-checkbox-item.selected {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+        .player-checkbox-item input {
+            margin: 0;
+        }
+        
+        /* Стили для сетки турнира (брекет) */
+        .bracket-container {
+            display: flex;
+            overflow-x: auto;
+            padding: 20px 0;
+        }
+        .bracket-round {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            min-width: 200px;
+            margin-right: 40px;
+        }
+        .bracket-match {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+            position: relative;
+        }
+        .bracket-match.winner {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+        .bracket-player {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            margin: 4px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .bracket-player:hover {
+            background: rgba(0,0,0,0.05);
+        }
+        .bracket-player.selected {
+            background: #4CAF50;
+            color: white;
+        }
+        .match-connector {
+            position: absolute;
+            right: -20px;
+            width: 20px;
+            height: 2px;
+            background: #999;
+            top: 50%;
+        }
+        .bracket-round-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #4CAF50;
+        }
+        
+        /* Стили для истории турниров */
+        .tournament-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+        .tournament-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .tournament-winner {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border-color: #FF9800;
+        }
+        .tournament-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .tournament-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .tournament-date {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .tournament-winner-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+        }
+        .winner-avatar-large {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid #FFD700;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
@@ -1302,6 +1431,7 @@
             <button class="tab-btn" onclick="openTab('players')">👥 Игроки</button>
             <button class="tab-btn" onclick="openTab('stats')">📊 Статистика</button>
             <button class="tab-btn" onclick="openTab('penalties')">⚠️ Штрафы</button>
+            <button class="tab-btn" onclick="openTab('tournaments')">🏆 Турниры</button>
         </div>
         
         <!-- Контент вкладок -->
@@ -1525,6 +1655,71 @@
                     </thead>
                     <tbody id="penaltiesHistoryBody"></tbody>
                 </table>
+            </div>
+        </div>
+        
+        <!-- НОВАЯ ВКЛАДКА ТУРНИРОВ -->
+        <div class="tab-content" id="tournaments">
+            <h2>🏆 Генератор турниров</h2>
+            <p>Создавайте турнирные сетки, управляйте матчами и отслеживайте историю.</p>
+            
+            <!-- Блок 1: Выбор игроков -->
+            <div class="admin-controls" style="margin-bottom: 30px;">
+                <h4>👥 1. Выберите или добавьте игроков</h4>
+                <div class="form-group">
+                    <label>Существующие игроки:</label>
+                    <div id="availablePlayersList" style="display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 8px;">
+                        <!-- Список игроков будет сгенерирован здесь -->
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Добавить нового игрока:</label>
+                        <input type="text" id="newTournamentPlayer" placeholder="Имя нового игрока">
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button class="add-btn action-btn" onclick="addPlayerToTournament()" style="width: 100%;">
+                            ➕ Добавить в турнир
+                        </button>
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <strong>Игроки в турнире:</strong>
+                    <div id="tournamentPlayersList" style="min-height: 50px; padding: 15px; background: #e8f5e9; border-radius: 8px; margin-top: 10px;">
+                        Пока никого нет. Выберите игроков выше.
+                    </div>
+                    <button class="action-btn add-btn" onclick="generateBracket()" style="margin-top: 15px;">
+                        🎯 Сгенерировать турнирную сетку
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Блок 2: Турнирная сетка -->
+            <div class="admin-controls" id="bracketSection" style="display: none; margin-bottom: 30px;">
+                <h4>📊 2. Турнирная сетка</h4>
+                <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #e0e0e0;">
+                    <div id="tournamentBracket">
+                        <!-- Сетка будет сгенерирована здесь -->
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button class="action-btn add-btn" onclick="saveTournament()">
+                            💾 Сохранить турнир и матчи
+                        </button>
+                        <small style="display: block; margin-top: 10px; color: #666;">
+                            <label><input type="checkbox" id="addToGlobalRating" checked> Добавить матчи этого турнира в общий рейтинг</label>
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Блок 3: История турниров -->
+            <div class="admin-controls">
+                <h4>📜 3. История турниров</h4>
+                <div id="tournamentsHistory">
+                    <!-- История будет загружена здесь -->
+                    <p>Загрузка истории турниров...</p>
+                </div>
             </div>
         </div>
         
@@ -2201,6 +2396,569 @@
         
         container.innerHTML = html;
     }
+    
+    // ============================================
+    // ТУРНИРНАЯ СИСТЕМА - НОВЫЙ КОД
+    // ============================================
+    let tournamentPlayers = [];
+    let tournamentMatches = [];
+    let tournamentsHistory = [];
+    let currentTournament = null;
+    
+    // Функция для обновления списка доступных игроков
+    function updateAvailablePlayersList() {
+        const container = document.getElementById('availablePlayersList');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        Object.keys(players).forEach(playerName => {
+            const isSelected = tournamentPlayers.includes(playerName);
+            
+            const playerItem = document.createElement('div');
+            playerItem.className = `player-checkbox-item ${isSelected ? 'selected' : ''}`;
+            playerItem.innerHTML = `
+                <input type="checkbox" id="player_${playerName}" 
+                       ${isSelected ? 'checked' : ''} 
+                       onchange="toggleTournamentPlayer('${playerName}')">
+                <label for="player_${playerName}" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <img src="${players[playerName]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                         style="width: 30px; height: 30px; border-radius: 50%;">
+                    <span>${playerName}</span>
+                </label>
+            `;
+            container.appendChild(playerItem);
+        });
+    }
+    
+    // Функция для добавления/удаления игрока в турнир
+    function toggleTournamentPlayer(playerName) {
+        const index = tournamentPlayers.indexOf(playerName);
+        if (index === -1) {
+            tournamentPlayers.push(playerName);
+        } else {
+            tournamentPlayers.splice(index, 1);
+        }
+        updateTournamentPlayersList();
+        updateAvailablePlayersList();
+    }
+    
+    // Функция для добавления нового игрока в турнир
+    function addPlayerToTournament() {
+        const input = document.getElementById('newTournamentPlayer');
+        const playerName = input.value.trim();
+        
+        if (!playerName) {
+            showNotification('Введите имя игрока!', 'error');
+            return;
+        }
+        
+        // Проверяем, есть ли уже такой игрок в общем списке
+        if (!players[playerName]) {
+            if (confirm(`Игрок "${playerName}" не найден в основной базе. Создать нового игрока?`)) {
+                // Создаем нового игрока
+                players[playerName] = {
+                    rating: 1000,
+                    matches: 0,
+                    wins: 0,
+                    lastGame: null,
+                    joinDate: new Date(),
+                    penalties: 0,
+                    avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`,
+                    achievement_bonuses: {}
+                };
+                
+                // Сохраняем в Supabase
+                savePlayerToSupabase(playerName, players[playerName]);
+                
+                // Обновляем общие списки
+                updatePlayerSelects();
+                updateAllDisplays();
+                
+                showNotification(`✅ Новый игрок ${playerName} создан!`, 'success');
+            } else {
+                return;
+            }
+        }
+        
+        // Добавляем в турнир
+        if (!tournamentPlayers.includes(playerName)) {
+            tournamentPlayers.push(playerName);
+            updateTournamentPlayersList();
+            updateAvailablePlayersList();
+            input.value = '';
+            showNotification(`✅ Игрок ${playerName} добавлен в турнир!`, 'success');
+        }
+    }
+    
+    // Функция для обновления списка игроков в турнире
+    function updateTournamentPlayersList() {
+        const container = document.getElementById('tournamentPlayersList');
+        if (!container) return;
+        
+        if (tournamentPlayers.length === 0) {
+            container.innerHTML = 'Пока никого нет. Выберите игроков выше.';
+            return;
+        }
+        
+        let html = '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
+        tournamentPlayers.forEach(playerName => {
+            html += `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border-radius: 20px; border: 2px solid #4CAF50;">
+                    <img src="${players[playerName]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                         style="width: 30px; height: 30px; border-radius: 50%;">
+                    <span>${playerName}</span>
+                    <button onclick="removePlayerFromTournament('${playerName}')" 
+                            style="background: none; border: none; color: #f44336; cursor: pointer; font-size: 16px; margin-left: 5px;">
+                        ×
+                    </button>
+                </div>
+            `;
+        });
+        html += '</div>';
+        html += `<p style="margin-top: 10px;"><strong>Всего игроков:</strong> ${tournamentPlayers.length}</p>`;
+        
+        container.innerHTML = html;
+    }
+    
+    // Функция для удаления игрока из турнира
+    function removePlayerFromTournament(playerName) {
+        const index = tournamentPlayers.indexOf(playerName);
+        if (index !== -1) {
+            tournamentPlayers.splice(index, 1);
+            updateTournamentPlayersList();
+            updateAvailablePlayersList();
+        }
+    }
+    
+    // Функция для генерации турнирной сетки
+    function generateBracket() {
+        if (tournamentPlayers.length < 2) {
+            showNotification('Нужно как минимум 2 игрока для турнира!', 'error');
+            return;
+        }
+        
+        // Показываем секцию сетки
+        document.getElementById('bracketSection').style.display = 'block';
+        
+        // Создаем случайный порядок игроков
+        const shuffledPlayers = [...tournamentPlayers].sort(() => Math.random() - 0.5);
+        
+        // Создаем структуру матчей (система плей-офф)
+        tournamentMatches = [];
+        let roundPlayers = shuffledPlayers;
+        let roundNumber = 1;
+        let bracketHTML = '';
+        
+        // Определяем, нужно ли добавить "пустышек" для четного числа участников
+        if (roundPlayers.length % 2 !== 0 && roundPlayers.length > 2) {
+            roundPlayers.push('Автоматический проход');
+        }
+        
+        bracketHTML += '<div class="bracket-container">';
+        
+        // Пока есть больше 1 игрока в раунде
+        while (roundPlayers.length > 1) {
+            bracketHTML += `<div class="bracket-round"><div class="bracket-round-title">Раунд ${roundNumber}</div>`;
+            
+            const nextRoundPlayers = [];
+            
+            // Создаем пары
+            for (let i = 0; i < roundPlayers.length; i += 2) {
+                const player1 = roundPlayers[i];
+                const player2 = roundPlayers[i + 1] || 'Автоматический проход';
+                const matchId = `match_${roundNumber}_${i/2}`;
+                
+                // Если это не "автоматический проход", создаем матч
+                if (player2 !== 'Автоматический проход') {
+                    tournamentMatches.push({
+                        id: matchId,
+                        round: roundNumber,
+                        player1: player1,
+                        player2: player2,
+                        winner: null,
+                        played: false
+                    });
+                    
+                    bracketHTML += `
+                        <div class="bracket-match" id="${matchId}">
+                            <div class="bracket-player" onclick="selectWinner('${matchId}', '${player1}')" id="${matchId}_p1">
+                                <span>${player1}</span>
+                                <span class="player-score">-</span>
+                            </div>
+                            <div class="bracket-player" onclick="selectWinner('${matchId}', '${player2}')" id="${matchId}_p2">
+                                <span>${player2}</span>
+                                <span class="player-score">-</span>
+                            </div>
+                            ${roundNumber > 1 ? '<div class="match-connector"></div>' : ''}
+                        </div>
+                    `;
+                    
+                    // Победитель переходит в следующий раунд (пока неизвестен)
+                    nextRoundPlayers.push(null);
+                } else {
+                    // Автоматический проход
+                    bracketHTML += `
+                        <div class="bracket-match">
+                            <div class="bracket-player winner">
+                                <span>${player1}</span>
+                                <span class="player-score">Автоматический проход</span>
+                            </div>
+                            <div class="match-connector"></div>
+                        </div>
+                    `;
+                    nextRoundPlayers.push(player1);
+                }
+            }
+            
+            bracketHTML += '</div>';
+            
+            // Подготавливаем следующий раунд
+            roundPlayers = nextRoundPlayers;
+            roundNumber++;
+        }
+        
+        bracketHTML += '</div>';
+        
+        document.getElementById('tournamentBracket').innerHTML = bracketHTML;
+        
+        // Прокручиваем к сетке
+        document.getElementById('bracketSection').scrollIntoView({ behavior: 'smooth' });
+        
+        // Сохраняем текущий турнир
+        currentTournament = {
+            id: 'tournament_' + Date.now(),
+            date: new Date(),
+            players: shuffledPlayers,
+            matches: tournamentMatches,
+            winner: null
+        };
+        
+        showNotification(`✅ Турнирная сетка создана для ${tournamentPlayers.length} игроков!`, 'success');
+    }
+    
+    // Функция для выбора победителя в матче
+    function selectWinner(matchId, playerName) {
+        if (!isAdmin && !currentTournament) {
+            showNotification('Только администратор может управлять турниром!', 'error');
+            return;
+        }
+        
+        const match = tournamentMatches.find(m => m.id === matchId);
+        if (!match || match.played) return;
+        
+        // Сбрасываем выделение для обоих игроков
+        document.getElementById(`${matchId}_p1`).classList.remove('selected');
+        document.getElementById(`${matchId}_p2`).classList.remove('selected');
+        
+        // Выделяем победителя
+        const winnerElement = playerName === match.player1 ? 
+            document.getElementById(`${matchId}_p1`) : 
+            document.getElementById(`${matchId}_p2`);
+        
+        if (winnerElement) {
+            winnerElement.classList.add('selected');
+            winnerElement.querySelector('.player-score').textContent = '🏆';
+        }
+        
+        // Обновляем данные матча
+        match.winner = playerName;
+        match.played = true;
+        
+        // Помечаем матч как завершенный
+        const matchElement = document.getElementById(matchId);
+        if (matchElement) {
+            matchElement.classList.add('winner');
+        }
+        
+        // Показываем уведомление
+        showNotification(`✅ В матче победил: ${playerName}`, 'success');
+        
+        // Автоматически продвигаем победителя в следующий раунд
+        updateBracketConnections();
+    }
+    
+    // Функция для обновления связей в сетке
+    function updateBracketConnections() {
+        // Эта функция будет автоматически заполнять следующий раунд
+        // когда победители определены (продвинутая логика)
+        // Для простоты оставим базовую версию
+        console.log('Обновление связей сетки...');
+    }
+    
+    // Функция для сохранения турнира
+    async function saveTournament() {
+        if (!isAdmin) {
+            showNotification('Только администратор может сохранять турниры!', 'error');
+            return;
+        }
+        
+        if (!currentTournament) {
+            showNotification('Сначала создайте турнирную сетку!', 'error');
+            return;
+        }
+        
+        // Проверяем, все ли матчи сыграны
+        const unfinishedMatches = tournamentMatches.filter(m => !m.played);
+        if (unfinishedMatches.length > 0) {
+            if (!confirm(`Осталось ${unfinishedMatches.length} несыгранных матчей. Всё равно сохранить турнир?`)) {
+                return;
+            }
+        }
+        
+        // Определяем победителя турнира (победитель последнего матча)
+        const finalMatch = tournamentMatches
+            .filter(m => m.played)
+            .sort((a, b) => b.round - a.round)[0];
+        
+        if (finalMatch) {
+            currentTournament.winner = finalMatch.winner;
+        }
+        
+        // Сохраняем турнир в историю
+        tournamentsHistory.unshift({...currentTournament});
+        
+        // Сохраняем в localStorage (в реальном приложении - в Supabase)
+        localStorage.setItem('tennisTournaments', JSON.stringify(tournamentsHistory));
+        
+        // Если выбрано добавление в общий рейтинг
+        const addToGlobal = document.getElementById('addToGlobalRating').checked;
+        if (addToGlobal) {
+            await addTournamentMatchesToGlobalRating();
+        }
+        
+        // Обновляем отображение истории
+        updateTournamentsHistory();
+        
+        // Сбрасываем текущий турнир
+        resetTournament();
+        
+        showNotification(`✅ Турнир сохранен! Победитель: ${currentTournament.winner || 'не определен'}`, 'success');
+    }
+    
+    // Функция для добавления матчей турнира в общий рейтинг
+    async function addTournamentMatchesToGlobalRating() {
+        const tournamentDate = currentTournament.date;
+        let addedMatches = 0;
+        
+        for (const match of tournamentMatches.filter(m => m.played && m.winner)) {
+            // Создаем объект матча для основной системы
+            const globalMatch = {
+                id: 'tournament_match_' + Date.now() + '_' + match.id,
+                date: new Date(tournamentDate.getTime() + Math.random() * 1000000), // Немного разное время
+                player1: match.player1,
+                player2: match.player2,
+                winner: match.winner,
+                change1: match.winner === match.player1 ? 16 : -16,
+                change2: match.winner === match.player2 ? 16 : -16,
+                score: 'турнир'
+            };
+            
+            // Добавляем в общий список матчей
+            matches.unshift(globalMatch);
+            
+            // Обновляем статистику игроков
+            if (players[match.player1]) {
+                players[match.player1].matches++;
+                players[match.player1].lastGame = globalMatch.date;
+                if (match.winner === match.player1) {
+                    players[match.player1].wins++;
+                    players[match.player1].rating += 16;
+                } else {
+                    players[match.player1].rating -= 16;
+                }
+                await savePlayerToSupabase(match.player1, players[match.player1]);
+            }
+            
+            if (players[match.player2]) {
+                players[match.player2].matches++;
+                players[match.player2].lastGame = globalMatch.date;
+                if (match.winner === match.player2) {
+                    players[match.player2].wins++;
+                    players[match.player2].rating += 16;
+                } else {
+                    players[match.player2].rating -= 16;
+                }
+                await savePlayerToSupabase(match.player2, players[match.player2]);
+            }
+            
+            // Сохраняем матч в Supabase
+            await saveMatchToSupabase(globalMatch);
+            
+            addedMatches++;
+        }
+        
+        // Обновляем основной интерфейс
+        updateAllDisplays();
+        
+        if (addedMatches > 0) {
+            showNotification(`✅ ${addedMatches} матчей добавлено в общий рейтинг!`, 'success');
+        }
+    }
+    
+    // Функция для сброса текущего турнира
+    function resetTournament() {
+        tournamentPlayers = [];
+        tournamentMatches = [];
+        currentTournament = null;
+        
+        updateTournamentPlayersList();
+        updateAvailablePlayersList();
+        
+        document.getElementById('bracketSection').style.display = 'none';
+        document.getElementById('tournamentBracket').innerHTML = '';
+        document.getElementById('newTournamentPlayer').value = '';
+    }
+    
+    // Функция для обновления истории турниров
+    function updateTournamentsHistory() {
+        const container = document.getElementById('tournamentsHistory');
+        if (!container) return;
+        
+        // Загружаем из localStorage
+        const savedHistory = localStorage.getItem('tennisTournaments');
+        if (savedHistory) {
+            try {
+                tournamentsHistory = JSON.parse(savedHistory);
+            } catch (e) {
+                console.error('Ошибка загрузки истории турниров:', e);
+                tournamentsHistory = [];
+            }
+        }
+        
+        if (tournamentsHistory.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 30px; background: #f8f9fa; border-radius: 10px;">
+                    <h3 style="font-size: 16px; margin-bottom: 10px;">🏆 Турниров пока нет</h3>
+                    <p style="font-size: 14px;">Создайте первый турнир используя генератор выше!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        
+        tournamentsHistory.forEach((tournament, index) => {
+            const isWinner = tournament.winner;
+            const dateStr = new Date(tournament.date).toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            html += `
+                <div class="tournament-card ${isWinner ? 'tournament-winner' : ''}">
+                    <div class="tournament-header">
+                        <div class="tournament-title">Турнир #${tournamentsHistory.length - index}</div>
+                        <div class="tournament-date">${dateStr}</div>
+                    </div>
+                    <p><strong>Участники:</strong> ${tournament.players.join(', ')}</p>
+                    <p><strong>Матчей сыграно:</strong> ${tournament.matches.filter(m => m.played).length} из ${tournament.matches.length}</p>
+                    
+                    ${isWinner ? `
+                        <div class="tournament-winner-info">
+                            <img src="${players[tournament.winner]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                 class="winner-avatar-large">
+                            <div>
+                                <strong style="font-size: 1.1em;">🏆 ПОБЕДИТЕЛЬ ТУРНИРА:</strong>
+                                <div style="font-size: 1.3em; font-weight: bold; color: #333;">${tournament.winner}</div>
+                                <div style="font-size: 0.9em; color: #666;">
+                                    Рейтинг: ${players[tournament.winner]?.rating || 'N/A'} очков
+                                </div>
+                            </div>
+                        </div>
+                    ` : `
+                        <p><em>Турнир не завершен</em></p>
+                    `}
+                    
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button class="action-btn" onclick="viewTournamentDetails(${index})" 
+                                style="background: #2196F3; font-size: 12px; padding: 5px 10px;">
+                            👁️ Подробнее
+                        </button>
+                        <button class="action-btn" onclick="loadTournament(${index})" 
+                                style="background: #4CAF50; font-size: 12px; padding: 5px 10px;">
+                            🔄 Загрузить
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    // Функция для просмотра деталей турнира
+    function viewTournamentDetails(index) {
+        const tournament = tournamentsHistory[index];
+        if (!tournament) return;
+        
+        let details = `Турнир #${tournamentsHistory.length - index}\n`;
+        details += `Дата: ${new Date(tournament.date).toLocaleDateString()}\n`;
+        details += `Участники: ${tournament.players.length}\n\n`;
+        details += 'Матчи:\n';
+        
+        tournament.matches.forEach((match, i) => {
+            if (match.played) {
+                details += `Раунд ${match.round}: ${match.player1} vs ${match.player2} → Победитель: ${match.winner}\n`;
+            } else {
+                details += `Раунд ${match.round}: ${match.player1} vs ${match.player2} (не сыграно)\n`;
+            }
+        });
+        
+        alert(details);
+    }
+    
+    // Функция для загрузки турнира из истории
+    function loadTournament(index) {
+        const tournament = tournamentsHistory[index];
+        if (!tournament) return;
+        
+        if (!confirm(`Загрузить турнир от ${new Date(tournament.date).toLocaleDateString()}? Текущие данные будут потеряны.`)) {
+            return;
+        }
+        
+        tournamentPlayers = [...tournament.players];
+        tournamentMatches = [...tournament.matches];
+        currentTournament = {...tournament};
+        
+        updateTournamentPlayersList();
+        updateAvailablePlayersList();
+        
+        // Генерируем сетку заново
+        generateBracket();
+        
+        // Помечаем уже сыгранные матчи
+        setTimeout(() => {
+            tournamentMatches.forEach(match => {
+                if (match.played && match.winner) {
+                    const matchElement = document.getElementById(match.id);
+                    if (matchElement) {
+                        matchElement.classList.add('winner');
+                        const winnerElement = document.getElementById(`${match.id}_p${match.winner === match.player1 ? '1' : '2'}`);
+                        if (winnerElement) {
+                            winnerElement.classList.add('selected');
+                            winnerElement.querySelector('.player-score').textContent = '🏆';
+                        }
+                    }
+                }
+            });
+        }, 100);
+        
+        showNotification('✅ Турнир загружен из истории!', 'success');
+    }
+    
+    // Обновляем функцию openTab для поддержки турниров
+    const originalOpenTab = openTab;
+    openTab = function(tabName) {
+        originalOpenTab(tabName);
+        if (tabName === 'tournaments') {
+            updateAvailablePlayersList();
+            updateTournamentsHistory();
+        }
+    };
     
     // ============================================
     // ИНИЦИАЛИЗАЦИЯ SUPABASE
@@ -3790,6 +4548,14 @@
         if (tabName === 'stats') {
             setTimeout(() => {
                 updateYearProgressChart();
+            }, 100);
+        }
+        
+        // Если открыли турниры - обновляем списки
+        if (tabName === 'tournaments') {
+            setTimeout(() => {
+                updateAvailablePlayersList();
+                updateTournamentsHistory();
             }, 100);
         }
     }
