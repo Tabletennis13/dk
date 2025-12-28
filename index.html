@@ -886,47 +886,90 @@
             text-align: center;
         }
         
-        /* НОВЫЕ СТИЛИ ДЛЯ РАЗДЕЛЕНИЯ МАТЧЕЙ ПО ДНЯМ */
+        /* НОВЫЕ СТИЛИ ДЛЯ РАЗДЕЛЕНИЯ МАТЧЕЙ ПО ДНЯМ С ВОЗМОЖНОСТЬЮ СВОРАЧИВАНИЯ */
         .match-day-header {
-            background-color: #f0f7ff;
-            color: #1976d2;
+            background-color: #1976d2;
+            color: white;
             font-weight: bold;
-            font-size: 16px;
-            padding: 12px 15px;
-            border-left: 4px solid #1976d2;
-            margin: 15px 0 8px 0;
-            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            padding: 10px 12px;
+            margin: 10px 0 0 0;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .match-day-header:hover {
+            background-color: #1565c0;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        
+        .match-day-header.collapsed {
+            background-color: #e0f2f1;
+            color: #00796b;
+            margin-bottom: 8px;
+        }
+        
+        .match-day-header.collapsed:hover {
+            background-color: #b2dfdb;
         }
         
         .match-day-header .day-info {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         
         .match-day-header .day-date {
             font-weight: 600;
+            font-size: 14px;
         }
         
         .match-day-header .match-count {
-            background: #1976d2;
+            background: rgba(255, 255, 255, 0.9);
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .match-day-header.collapsed .match-count {
+            background: #00796b;
             color: white;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: normal;
+        }
+        
+        .match-day-header .toggle-icon {
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+        
+        .match-day-header.collapsed .toggle-icon {
+            transform: rotate(-90deg);
         }
         
         .match-day-group {
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             border: 1px solid #e0e0e0;
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            max-height: 1000px;
+            opacity: 1;
+        }
+        
+        .match-day-group.collapsed {
+            max-height: 0;
+            opacity: 0;
+            margin-bottom: 0;
+            border: none;
+            overflow: hidden;
         }
         
         .match-day-group table {
@@ -1112,20 +1155,17 @@
             
             /* Адаптация для разделения матчей по дням на мобильных */
             .match-day-header {
-                padding: 10px 12px;
-                font-size: 14px;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 5px;
+                padding: 8px 10px;
+                font-size: 13px;
             }
             
-            .match-day-header .day-info {
-                width: 100%;
-                justify-content: space-between;
+            .match-day-header .day-date {
+                font-size: 13px;
             }
             
             .match-day-header .match-count {
-                font-size: 12px;
+                font-size: 11px;
+                padding: 1px 6px;
             }
         }
         
@@ -2526,7 +2566,7 @@
     }
     
     // ============================================
-    // ОБНОВЛЁННАЯ ФУНКЦИЯ: Обновить таблицу матчей с группировкой по дням
+    // ОБНОВЛЁННАЯ ФУНКЦИЯ: Обновить таблицу матчей с группировкой по дням и возможностью сворачивания
     // ============================================
     function updateMatchesTable() {
         const container = document.getElementById('matchesContainer');
@@ -2561,7 +2601,7 @@
         });
         
         // Для каждого дня создаём отдельную группу
-        sortedDays.forEach(dayKey => {
+        sortedDays.forEach((dayKey, dayIndex) => {
             const dayMatches = matchesByDay[dayKey];
             const dayDate = new Date(dayKey);
             
@@ -2586,19 +2626,47 @@
                 displayDate = displayDate.charAt(0).toUpperCase() + displayDate.slice(1);
             }
             
+            // Создаём уникальный идентификатор для этого дня
+            const dayId = 'matchDay_' + dayKey.replace(/\s+/g, '_');
+            
             // Создаём контейнер для дня
             const dayGroup = document.createElement('div');
+            dayGroup.id = dayId;
             dayGroup.className = 'match-day-group';
             
-            // Заголовок дня
+            // По умолчанию открываем только последние 2 дня
+            if (dayIndex >= 2) {
+                dayGroup.classList.add('collapsed');
+            }
+            
+            // Заголовок дня (кликабельный для сворачивания/разворачивания)
             const dayHeader = document.createElement('div');
-            dayHeader.className = 'match-day-header';
+            dayHeader.className = dayIndex >= 2 ? 'match-day-header collapsed' : 'match-day-header';
+            dayHeader.setAttribute('data-day-id', dayId);
             dayHeader.innerHTML = `
                 <div class="day-info">
+                    <div class="toggle-icon">▼</div>
                     <div class="day-date">${displayDate}</div>
                 </div>
                 <div class="match-count">${dayMatches.length} матч${getPluralForm(dayMatches.length)}</div>
             `;
+            
+            // Добавляем обработчик клика для сворачивания/разворачивания
+            dayHeader.addEventListener('click', function() {
+                const targetDayId = this.getAttribute('data-day-id');
+                const targetDay = document.getElementById(targetDayId);
+                if (targetDay) {
+                    if (targetDay.classList.contains('collapsed')) {
+                        // Разворачиваем
+                        targetDay.classList.remove('collapsed');
+                        this.classList.remove('collapsed');
+                    } else {
+                        // Сворачиваем
+                        targetDay.classList.add('collapsed');
+                        this.classList.add('collapsed');
+                    }
+                }
+            });
             
             // Таблица для матчей этого дня
             const tableContainer = document.createElement('div');
@@ -2663,10 +2731,49 @@
             `;
             
             tableContainer.appendChild(table);
-            dayGroup.appendChild(dayHeader);
             dayGroup.appendChild(tableContainer);
+            container.appendChild(dayHeader);
             container.appendChild(dayGroup);
         });
+        
+        // Добавляем кнопки для массового управления
+        if (sortedDays.length > 2) {
+            const controlsDiv = document.createElement('div');
+            controlsDiv.style.display = 'flex';
+            controlsDiv.style.gap = '10px';
+            controlsDiv.style.margin = '15px 0';
+            controlsDiv.style.flexWrap = 'wrap';
+            
+            const expandAllBtn = document.createElement('button');
+            expandAllBtn.className = 'action-btn add-btn';
+            expandAllBtn.textContent = '📂 Развернуть все дни';
+            expandAllBtn.onclick = function() {
+                const allDayGroups = document.querySelectorAll('.match-day-group');
+                const allDayHeaders = document.querySelectorAll('.match-day-header');
+                allDayGroups.forEach(group => group.classList.remove('collapsed'));
+                allDayHeaders.forEach(header => header.classList.remove('collapsed'));
+            };
+            
+            const collapseAllBtn = document.createElement('button');
+            collapseAllBtn.className = 'action-btn penalty-btn';
+            collapseAllBtn.textContent = '📁 Свернуть все дни';
+            collapseAllBtn.onclick = function() {
+                const allDayGroups = document.querySelectorAll('.match-day-group');
+                const allDayHeaders = document.querySelectorAll('.match-day-header');
+                allDayGroups.forEach((group, index) => {
+                    if (index >= 2) { // Оставляем открытыми первые 2 дня
+                        group.classList.add('collapsed');
+                        if (allDayHeaders[index]) {
+                            allDayHeaders[index].classList.add('collapsed');
+                        }
+                    }
+                });
+            };
+            
+            controlsDiv.appendChild(expandAllBtn);
+            controlsDiv.appendChild(collapseAllBtn);
+            container.insertBefore(controlsDiv, container.firstChild);
+        }
     }
     
     // Вспомогательная функция для правильного склонения
@@ -3330,7 +3437,7 @@
     // Обновить все дисплеи
     function updateAllDisplays() {
         updateRatingTable();
-        updateMatchesTable(); // Теперь использует новую функцию с группировкой
+        updateMatchesTable(); // Теперь использует новую функцию с группировкой и сворачиванием
         updatePlayersTable();
         updatePenaltiesHistory();
         updatePeriodStats();
