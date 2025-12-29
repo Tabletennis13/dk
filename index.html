@@ -3270,33 +3270,40 @@
         }
     }
     
-    // Продолжение ввода результата матча
+    // Продолжение ввода результата матча (ИСПРАВЛЕННАЯ ВЕРСИЯ)
     async function continueMatchResultEntry(match, tournamentId) {
         if (!match) {
             showNotification('Матч не найден!', 'error');
             return;
         }
-        
+
+        // Находим турнир по ID
+        const tournament = tournaments.find(t => t.id === tournamentId);
+        if (!tournament) {
+            showNotification('Турнир не найден!', 'error');
+            return;
+        }
+
         if (match.winner) {
             if (!confirm('Результат уже внесен. Перезаписать?')) {
                 return;
             }
         }
-        
+
         // Запрашиваем результат
         const score = prompt(`Введите счет матча ${match.player1} vs ${match.player2} (например, 3:2):`);
         if (!score) return;
-        
+
         // Парсим счет
         const [player1GamesStr, player2GamesStr] = score.split(':');
         const player1Games = parseInt(player1GamesStr);
         const player2Games = parseInt(player2GamesStr);
-        
+
         if (isNaN(player1Games) || isNaN(player2Games)) {
             showNotification('Неверный формат счета! Используйте формат "3:2"', 'error');
             return;
         }
-        
+
         // Определяем победителя
         let winner;
         if (player1Games > player2Games) {
@@ -3306,7 +3313,7 @@
         } else {
             winner = 'draw';
         }
-        
+
         // Запрашиваем очки для расчета разницы (опционально)
         const pointsInput = prompt('Введите очки для расчета разницы (например, 11:9,11:8,9:11,11:6,11:7 через запятую):\n(Оставьте пустым, если не нужно)');
         
@@ -3324,7 +3331,7 @@
                 player2Points += p2Points;
             });
         }
-        
+
         // Обновляем матч
         match.winner = winner;
         match.score = score;
@@ -3333,7 +3340,7 @@
         match.player1_points = player1Points;
         match.player2_points = player2Points;
         match.status = 'completed';
-        
+
         try {
             // Обновляем матч в Supabase
             await supabaseClient
@@ -3348,19 +3355,19 @@
                     status: match.status
                 })
                 .eq('id', match.id);
-            
+
             // Проверяем, завершен ли турнир
             checkTournamentCompletion(tournament);
-            
+
             // Обновляем отображение
             if (document.getElementById('tournamentPageContainer').style.display === 'block') {
                 viewTournament(tournamentId);
             } else {
                 updateTournamentsDisplay();
             }
-            
+
             showNotification('✅ Результат матча сохранен!', 'success');
-            
+
         } catch (error) {
             console.error('❌ Ошибка сохранения результата:', error);
             showNotification('❌ Ошибка сохранения результата', 'error');
