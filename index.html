@@ -1893,7 +1893,7 @@
                 </div>
                 
                 <div id="achievementsContent">
-                    <!-- Здесь будет динамически генерироваться контент -->
+                    <!-- Здесь будет динамически генерируется контент -->
                     <p>Определение достижений игроков...</p>
                 </div>
                 
@@ -3367,127 +3367,73 @@
         }
     }
     
-    // Функция для проверки завершения турнира (ОБНОВЛЕНА - добавлена проверка досрочного завершения)
-    async function checkTournamentCompletion(tournament) {
-        const matches = tournamentMatches.filter(m => m.tournament_id === tournament.id);
-        const completedMatches = matches.filter(m => m.winner);
-        
-        // Если все матчи завершены
-        if (completedMatches.length === matches.length) {
-            tournament.status = 'completed';
-            
-            // Определяем победителя в зависимости от типа турнира
-            if (tournament.type.includes('round_robin')) {
-                determineRoundRobinWinner(tournament);
-            } else {
-                determineBracketWinner(tournament);
-            }
-            
-            // Обновляем турнир в Supabase
-            await updateTournamentInDatabase(tournament);
-            
-        } else {
-            // ПРОВЕРЯЕМ ВОЗМОЖНОСТЬ ДОСРОЧНОГО ЗАВЕРШЕНИЯ ДЛЯ КРУГОВЫХ ТУРНИРОВ
-            if (tournament.type.includes('round_robin')) {
-                // Для круговых турниров проверяем, можно ли определить победителя досрочно
-                const canFinishEarly = checkEarlyTournamentFinish(tournament);
-                if (canFinishEarly) {
-                    tournament.status = 'completed';
-                    determineRoundRobinWinner(tournament);
-                    
-                    // Обновляем турнир в Supabase
-                    await updateTournamentInDatabase(tournament);
-                    
-                    console.log(`✅ Турнир "${tournament.name}" завершен досрочно! Победитель: ${tournament.winner}`);
-                }
-            }
-        }
-    }
-    
     // Функция для проверки возможности досрочного завершения кругового турнира
     function checkEarlyTournamentFinish(tournament) {
         const matches = tournamentMatches.filter(m => m.tournament_id === tournament.id && m.winner);
         
+        console.log(`🔍 Проверка досрочного завершения турнира "${tournament.name}"`);
+        console.log(`📊 Завершенных матчей: ${matches.length}`);
+        
         // Для турнира на 3 игрока
         if (tournament.type === 'round_robin_3' && tournament.players.length === 3) {
+            // В турнире на 3 игрока всего должно быть сыграно 3 матча
+            // Если все 3 матча сыграны, турнир можно завершить
+            if (matches.length === 3) {
+                console.log(`✅ Все 3 матча сыграны, турнир можно завершить!`);
+                return true;
+            }
+            
+            // Если сыграно 2 матча, проверяем возможность досрочного завершения
+            if (matches.length === 2) {
+                // Рассчитываем статистику побед
+                const winStats = {};
+                tournament.players.forEach(player => {
+                    winStats[player] = 0;
+                });
+                
+                // Считаем победы
+                matches.forEach(match => {
+                    if (match.winner && match.winner !== 'draw') {
+                        winStats[match.winner]++;
+                    }
+                });
+                
+                console.log(`📈 Статистика побед:`, winStats);
+                
+                // Находим максимальное количество побед
+                const maxWins = Math.max(...Object.values(winStats));
+                const playersWithMaxWins = Object.keys(winStats).filter(p => winStats[p] === maxWins);
+                
+                // Если у одного игрока 2 победы, он победитель (остальные максимум могут иметь 1 победу)
+                if (maxWins === 2) {
+                    console.log(`🎯 Игрок ${playersWithMaxWins[0]} выиграл 2 матча из 2. Турнир можно завершить досрочно!`);
+                    return true;
+                }
+            }
+        }
+        
+        // Для турнира на 4 игрока
+        if (tournament.type === 'round_robin_4' && tournament.players.length === 4) {
+            // Каждый игрок должен сыграть 3 матча (всего 6 матчей)
+            // Если все 6 матчей сыграны, турнир можно завершить
+            if (matches.length === 6) {
+                console.log(`✅ Все 6 матчей сыграны, турнир можно завершить!`);
+                return true;
+            }
+            
             // Рассчитываем статистику побед
             const winStats = {};
             tournament.players.forEach(player => {
                 winStats[player] = 0;
             });
             
-            // Считаем победы
             matches.forEach(match => {
                 if (match.winner && match.winner !== 'draw') {
                     winStats[match.winner]++;
                 }
             });
             
-            // Для турнира на 3 игрока:
-            // Каждый должен сыграть 2 матча (всего 3 матча)
-            // Если один игрок выиграл 2 матча, он становится победителем
-            // Потому что даже если он проиграет свой третий матч (который еще не сыгран),
-            // максимальное количество побед у других игроков будет 1
-            
-            const players = tournament.players;
-            const totalMatchesToPlay = 3; // Всего матчей в турнире на 3 игрока
-            
-            // Проверяем, есть ли игрок с 2 победами
-            for (const player in winStats) {
-                if (winStats[player] === 2) {
-                    console.log(`🎯 Игрок ${player} выиграл 2 матча из ${totalMatchesToPlay}. Турнир можно завершить досрочно!`);
-                    return true;
-                }
-            }
-            
-            // Также можно завершить, если остался только один несыгранный матч,
-            // и у одного игрока уже 1 победа, а у других по 0 или 1
-            const remainingMatches = tournamentMatches.filter(m => 
-                m.tournament_id === tournament.id && !m.winner
-            ).length;
-            
-            if (remainingMatches === 1) {
-                // Если остался один матч, проверяем, может ли измениться победитель
-                const sortedPlayers = Object.entries(winStats)
-                    .sort(([,a], [,b]) => b - a);
-                
-                if (sortedPlayers.length >= 2) {
-                    const [leader, leaderWins] = sortedPlayers[0];
-                    const [second, secondWins] = sortedPlayers[1];
-                    
-                    // Если лидер опережает второго на 2 победы или больше,
-                    // то даже если второй выиграет оставшийся матч, он не догонит лидера
-                    if (leaderWins - secondWins >= 2) {
-                        console.log(`🎯 Лидер ${leader} (${leaderWins} побед) опережает второго ${second} (${secondWins} побед) на 2 победы. Турнир можно завершить досрочно!`);
-                        return true;
-                    }
-                }
-            }
-        }
-        
-        // Для турнира на 4 игрока и других форматов можно добавить аналогичную логику
-        if (tournament.type === 'round_robin_4' && tournament.players.length === 4) {
-            // Каждый игрок должен сыграть 3 матча (всего 6 матчей)
-            // Если игрок выиграл 3 матча, он становится победителем
-            // Или если у лидера такой отрыв, что его нельзя догнать
-            
-            const matches = tournamentMatches.filter(m => m.tournament_id === tournament.id && m.winner);
-            const winStats = {};
-            tournament.players.forEach(player => {
-                winStats[player] = 0;
-            });
-            
-            matches.forEach(match => {
-                if (match.winner && match.winner !== 'draw') {
-                    winStats[match.winner]++;
-                }
-            });
-            
-            const remainingMatches = tournamentMatches.filter(m => 
-                m.tournament_id === tournament.id && !m.winner
-            ).length;
-            
-            // Проверяем, есть ли игрок с 3 победами (максимум возможных 3)
+            // Проверяем, есть ли игрок с 3 победами (максимум возможных в турнире 4 игроков)
             for (const player in winStats) {
                 if (winStats[player] === 3) {
                     console.log(`🎯 Игрок ${player} выиграл все 3 матча. Турнир можно завершить досрочно!`);
@@ -3495,7 +3441,11 @@
                 }
             }
             
-            // Если осталось мало матчей, проверяем математическую возможность догнать лидера
+            // Проверяем математическую возможность догнать лидера
+            const remainingMatches = tournamentMatches.filter(m => 
+                m.tournament_id === tournament.id && !m.winner
+            ).length;
+            
             if (remainingMatches > 0) {
                 const sortedPlayers = Object.entries(winStats)
                     .sort(([,a], [,b]) => b - a);
@@ -3514,7 +3464,52 @@
             }
         }
         
+        console.log(`⏳ Турнир нельзя завершить досрочно`);
         return false;
+    }
+    
+    // Функция для проверки завершения турнира
+    async function checkTournamentCompletion(tournament) {
+        const matches = tournamentMatches.filter(m => m.tournament_id === tournament.id);
+        const completedMatches = matches.filter(m => m.winner);
+        
+        console.log(`🔍 Проверка завершения турнира "${tournament.name}"`);
+        console.log(`📊 Матчей: ${completedMatches.length}/${matches.length}`);
+        
+        // Если все матчи завершены
+        if (completedMatches.length === matches.length) {
+            console.log(`✅ Все матчи завершены!`);
+            tournament.status = 'completed';
+            
+            // Определяем победителя в зависимости от типа турнира
+            if (tournament.type.includes('round_robin')) {
+                determineRoundRobinWinner(tournament);
+            } else {
+                determineBracketWinner(tournament);
+            }
+            
+            // Обновляем турнир в Supabase
+            await updateTournamentInDatabase(tournament);
+            
+        } else {
+            // ПРОВЕРЯЕМ ВОЗМОЖНОСТЬ ДОСРОЧНОГО ЗАВЕРШЕНИЯ ДЛЯ КРУГОВЫХ ТУРНИРОВ
+            if (tournament.type.includes('round_robin')) {
+                console.log(`🔍 Проверка возможности досрочного завершения кругового турнира`);
+                const canFinishEarly = checkEarlyTournamentFinish(tournament);
+                if (canFinishEarly) {
+                    console.log(`✅ Турнир можно завершить досрочно!`);
+                    tournament.status = 'completed';
+                    determineRoundRobinWinner(tournament);
+                    
+                    // Обновляем турнир в Supabase
+                    await updateTournamentInDatabase(tournament);
+                    
+                    console.log(`✅ Турнир "${tournament.name}" завершен досрочно! Победитель: ${tournament.winner}`);
+                } else {
+                    console.log(`⏳ Турнир еще нельзя завершить`);
+                }
+            }
+        }
     }
     
     // Вспомогательная функция для обновления турнира в базе данных
