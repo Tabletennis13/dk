@@ -2032,6 +2032,8 @@
                             <select id="tournamentType">
                                 <option value="round_robin_3">Круговой турнир (3 игрока)</option>
                                 <option value="round_robin_4">Круговой турнир (4 игрока)</option>
+                                <option value="round_robin_5">Круговой турнир (5 игроков)</option>
+                                <option value="round_robin_6">Круговой турнир (6 игроков)</option>
                                 <option value="single_elimination_4">Олимпийская система (4 игрока)</option>
                                 <option value="single_elimination_8">Олимпийская система (8 игроков)</option>
                                 <option value="double_elimination_4">Двойная элиминация (4 игрока)</option>
@@ -2340,6 +2342,22 @@
                     return;
                 }
                 break;
+            case 'round_robin_5':
+                requiredPlayers = 5;
+                tournamentTypeName = 'Круговой турнир (5 игроков)';
+                if (selectedPlayers.length !== 5) {
+                    showNotification(`Для кругового турнира нужно выбрать ровно 5 игроков!`, 'error');
+                    return;
+                }
+                break;
+            case 'round_robin_6':
+                requiredPlayers = 6;
+                tournamentTypeName = 'Круговой турнир (6 игроков)';
+                if (selectedPlayers.length !== 6) {
+                    showNotification(`Для кругового турнира нужно выбрать ровно 6 игроков!`, 'error');
+                    return;
+                }
+                break;
             case 'single_elimination_4':
                 requiredPlayers = 4;
                 tournamentTypeName = 'Олимпийская система (4 игрока)';
@@ -2451,6 +2469,8 @@
         switch(tournament.type) {
             case 'round_robin_3':
             case 'round_robin_4':
+            case 'round_robin_5':
+            case 'round_robin_6':
                 // Круговой турнир: каждый играет с каждым
                 for (let i = 0; i < players.length; i++) {
                     for (let j = i + 1; j < players.length; j++) {
@@ -3144,7 +3164,7 @@
         container.innerHTML = html;
     }
     
-    // Функция для ввода результата матча (ОБНОВЛЕНА - теперь выбор соперника из списка)
+    // Функция для ввода результата матча (ОБНОВЛЕННАЯ)
     async function enterMatchResult(tournamentId, playerName, matchId = null) {
         if (!isAdmin) {
             showNotification('❌ Только администратор может вносить результаты!', 'error');
@@ -3444,6 +3464,110 @@
             for (const player in winStats) {
                 if (winStats[player] === 3) {
                     console.log(`🎯 Игрок ${player} выиграл все 3 матча. Турнир можно завершить досрочно!`);
+                    return true;
+                }
+            }
+            
+            // Проверяем математическую возможность догнать лидера
+            const remainingMatches = tournamentMatches.filter(m => 
+                m.tournament_id === tournament.id && !m.winner
+            ).length;
+            
+            if (remainingMatches > 0) {
+                const sortedPlayers = Object.entries(winStats)
+                    .sort(([,a], [,b]) => b - a);
+                
+                if (sortedPlayers.length >= 2) {
+                    const [leader, leaderWins] = sortedPlayers[0];
+                    const [second, secondWins] = sortedPlayers[1];
+                    const maxPossibleWinsForSecond = secondWins + remainingMatches;
+                    
+                    // Если лидера невозможно догнать даже если второй выиграет все оставшиеся матчи
+                    if (leaderWins > maxPossibleWinsForSecond) {
+                        console.log(`🎯 Лидер ${leader} (${leaderWins} побед) недосягаем для ${second} (максимум ${maxPossibleWinsForSecond} побед). Турнир можно завершить досрочно!`);
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        // Для турнира на 5 игроков
+        if (tournament.type === 'round_robin_5' && tournament.players.length === 5) {
+            // Каждый игрок должен сыграть 4 матча (всего 10 матчей)
+            // Если все 10 матчей сыграны, турнир можно завершить
+            if (matches.length === 10) {
+                console.log(`✅ Все 10 матчей сыграны, турнир можно завершить!`);
+                return true;
+            }
+            
+            // Рассчитываем статистику побед
+            const winStats = {};
+            tournament.players.forEach(player => {
+                winStats[player] = 0;
+            });
+            
+            matches.forEach(match => {
+                if (match.winner && match.winner !== 'draw') {
+                    winStats[match.winner]++;
+                }
+            });
+            
+            // Проверяем, есть ли игрок с 4 победами (максимум возможных в турнире 5 игроков)
+            for (const player in winStats) {
+                if (winStats[player] === 4) {
+                    console.log(`🎯 Игрок ${player} выиграл все 4 матча. Турнир можно завершить досрочно!`);
+                    return true;
+                }
+            }
+            
+            // Проверяем математическую возможность догнать лидера
+            const remainingMatches = tournamentMatches.filter(m => 
+                m.tournament_id === tournament.id && !m.winner
+            ).length;
+            
+            if (remainingMatches > 0) {
+                const sortedPlayers = Object.entries(winStats)
+                    .sort(([,a], [,b]) => b - a);
+                
+                if (sortedPlayers.length >= 2) {
+                    const [leader, leaderWins] = sortedPlayers[0];
+                    const [second, secondWins] = sortedPlayers[1];
+                    const maxPossibleWinsForSecond = secondWins + remainingMatches;
+                    
+                    // Если лидера невозможно догнать даже если второй выиграет все оставшиеся матчи
+                    if (leaderWins > maxPossibleWinsForSecond) {
+                        console.log(`🎯 Лидер ${leader} (${leaderWins} побед) недосягаем для ${second} (максимум ${maxPossibleWinsForSecond} побед). Турнир можно завершить досрочно!`);
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        // Для турнира на 6 игроков
+        if (tournament.type === 'round_robin_6' && tournament.players.length === 6) {
+            // Каждый игрок должен сыграть 5 матчей (всего 15 матчей)
+            // Если все 15 матчей сыграны, турнир можно завершить
+            if (matches.length === 15) {
+                console.log(`✅ Все 15 матчей сыграны, турнир можно завершить!`);
+                return true;
+            }
+            
+            // Рассчитываем статистику побед
+            const winStats = {};
+            tournament.players.forEach(player => {
+                winStats[player] = 0;
+            });
+            
+            matches.forEach(match => {
+                if (match.winner && match.winner !== 'draw') {
+                    winStats[match.winner]++;
+                }
+            });
+            
+            // Проверяем, есть ли игрок с 5 победами (максимум возможных в турнире 6 игроков)
+            for (const player in winStats) {
+                if (winStats[player] === 5) {
+                    console.log(`🎯 Игрок ${player} выиграл все 5 матчей. Турнир можно завершить досрочно!`);
                     return true;
                 }
             }
