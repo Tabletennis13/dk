@@ -2415,7 +2415,10 @@
             
             // Создаем диалог для ручного формирования пар
             const pairs = await manualPairCreation(selectedPlayers, tournamentType);
-            if (!pairs) return; // Пользователь отменил
+            if (!pairs) {
+                console.log('Пользователь отменил формирование пар');
+                return; // Пользователь отменил
+            }
             
             // Создаем турнир с уже сформированными парами
             await createTournamentWithPairs(tournamentName, tournamentType, tournamentTypeName, pairs);
@@ -2425,7 +2428,7 @@
         }
     }
     
-    // Функция для ручного формирования пар (НОВАЯ)
+    // Функция для ручного формирования пар (ИСПРАВЛЕННАЯ)
     async function manualPairCreation(selectedPlayers, tournamentType) {
         return new Promise((resolve) => {
             const isThreePairs = tournamentType === 'pairs_round_robin_3';
@@ -2459,6 +2462,7 @@
             `;
             
             let pairs = Array(pairCount).fill().map(() => [null, null]);
+            let currentDraggedPlayer = null;
             
             function renderPairDialog() {
                 let html = `
@@ -2556,7 +2560,7 @@
                                     <div style="font-size: 12px; color: #666;">Рейтинг: ${players[pair[1]]?.rating || 1000}</div>
                                 </div>
                             </div>
-                            <button onclick="removeFromPair(${index})" 
+                            <button onclick="window.removeFromPairInDialog(${index})" 
                                     style="
                                         background: #f44336;
                                         color: white;
@@ -2598,20 +2602,53 @@
                 dialogContent.innerHTML = html;
                 
                 // Добавляем обработчики событий для перетаскивания
-                setTimeout(() => {
-                    setupDragAndDrop();
-                }, 100);
+                setupDragAndDrop(dialogContent, pairs);
+                
+                // Назначаем обработчики для кнопок
+                const cancelBtn = dialogContent.querySelector('#cancelBtn');
+                const confirmBtn = dialogContent.querySelector('#confirmBtn');
+                
+                cancelBtn.onclick = () => {
+                    document.body.removeChild(dialogDiv);
+                    resolve(null);
+                };
+                
+                confirmBtn.onclick = () => {
+                    // Проверяем, что все пары заполнены
+                    const allPairsFilled = pairs.every(pair => pair[0] && pair[1]);
+                    if (!allPairsFilled) {
+                        showNotification('Заполните все пары!', 'error');
+                        return;
+                    }
+                    
+                    // Проверяем, что все игроки распределены
+                    const allPlayersUsed = new Set(pairs.flat());
+                    if (allPlayersUsed.size !== selectedPlayers.length) {
+                        showNotification('Не все игроки распределены по парам!', 'error');
+                        return;
+                    }
+                    
+                    document.body.removeChild(dialogDiv);
+                    resolve(pairs);
+                };
             }
             
             // Функция для настройки перетаскивания
-            function setupDragAndDrop() {
-                const draggables = document.querySelectorAll('.draggable-player');
-                const dropZones = document.querySelectorAll('.drop-zone');
+            function setupDragAndDrop(container, pairs) {
+                const draggables = container.querySelectorAll('.draggable-player');
+                const dropZones = container.querySelectorAll('.drop-zone');
                 
                 draggables.forEach(draggable => {
                     draggable.addEventListener('dragstart', (e) => {
-                        e.dataTransfer.setData('text/plain', draggable.dataset.player);
+                        currentDraggedPlayer = draggable.dataset.player;
+                        e.dataTransfer.setData('text/plain', currentDraggedPlayer);
                         e.dataTransfer.effectAllowed = 'move';
+                        draggable.style.opacity = '0.5';
+                    });
+                    
+                    draggable.addEventListener('dragend', () => {
+                        draggable.style.opacity = '1';
+                        currentDraggedPlayer = null;
                     });
                 });
                 
@@ -2632,7 +2669,7 @@
                     
                     zone.addEventListener('drop', (e) => {
                         e.preventDefault();
-                        const playerName = e.dataTransfer.getData('text/plain');
+                        const playerName = currentDraggedPlayer || e.dataTransfer.getData('text/plain');
                         const pairIndex = parseInt(zone.dataset.pairIndex);
                         
                         if (!playerName) return;
@@ -2669,7 +2706,7 @@
             }
             
             // Глобальная функция для удаления из пары
-            window.removeFromPair = function(pairIndex) {
+            window.removeFromPairInDialog = function(pairIndex) {
                 pairs[pairIndex] = [null, null];
                 renderPairDialog();
             };
@@ -2679,34 +2716,17 @@
             dialogDiv.appendChild(dialogContent);
             document.body.appendChild(dialogDiv);
             
-            // Ожидаем подтверждения или отмены
-            document.getElementById('cancelBtn').onclick = () => {
-                document.body.removeChild(dialogDiv);
-                resolve(null);
-            };
-            
-            document.getElementById('confirmBtn').onclick = () => {
-                // Проверяем, что все пары заполнены
-                const allPairsFilled = pairs.every(pair => pair[0] && pair[1]);
-                if (!allPairsFilled) {
-                    showNotification('Заполните все пары!', 'error');
-                    return;
+            // Закрытие по клику вне диалога
+            dialogDiv.addEventListener('click', (e) => {
+                if (e.target === dialogDiv) {
+                    document.body.removeChild(dialogDiv);
+                    resolve(null);
                 }
-                
-                // Проверяем, что все игроки распределены
-                const allPlayersUsed = new Set(pairs.flat());
-                if (allPlayersUsed.size !== selectedPlayers.length) {
-                    showNotification('Не все игроки распределены по парам!', 'error');
-                    return;
-                }
-                
-                document.body.removeChild(dialogDiv);
-                resolve(pairs);
-            };
+            });
         });
     }
     
-    // Функция для создания турнира с парами (НОВАЯ)
+    // Функция для создания турнира с парами (ИСПРАВЛЕННАЯ)
     async function createTournamentWithPairs(tournamentName, tournamentType, tournamentTypeName, pairs) {
         try {
             const newTournament = {
@@ -2864,7 +2884,7 @@
         }
     }
     
-    // Функция для генерации матчей парного турнира (НОВАЯ)
+    // Функция для генерации матчей парного турнира (ИСПРАВЛЕННАЯ)
     function generatePairsTournamentMatches(tournament, pairs) {
         const matches = [];
         
@@ -4009,7 +4029,7 @@
             
             matchChoices.forEach((choice, index) => {
                 html += `
-                    <button onclick="selectMatch(${index})" 
+                    <button onclick="window.selectMatchInDialog(${index})" 
                             style="
                                 padding: 12px;
                                 background: #f8f9fa;
@@ -4040,7 +4060,7 @@
             document.body.appendChild(dialogDiv);
             
             // Глобальные функции для выбора матча
-            window.selectMatch = function(index) {
+            window.selectMatchInDialog = function(index) {
                 const choice = matchChoices[index];
                 document.body.removeChild(dialogDiv);
                 resolve(choice);
