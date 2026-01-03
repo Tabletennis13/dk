@@ -2035,7 +2035,7 @@
                                 <option value="round_robin_5">Круговой турнир (5 игроков)</option>
                                 <option value="round_robin_6">Круговой турнир (6 игроков)</option>
                                 <option value="single_elimination_4">Олимпийская система (4 игрока)</option>
-                                <option value="single_elimination_8">Олимпийская система (8 игрока)</option>
+                                <option value="single_elimination_8">Олимпийская система (8 игроков)</option>
                                 <option value="double_elimination_4">Двойная элиминация (4 игрока)</option>
                                 <option value="pairs_round_robin_3">Парный турнир (3 пары)</option>
                                 <option value="pairs_round_robin_4">Парный турнир (4 пары)</option>
@@ -2425,7 +2425,7 @@
         }
     }
     
-    // Функция для ручного формирования пар (НОВАЯ)
+    // Функция для ручного формирования пар (ИСПРАВЛЕННАЯ ВЕРСИЯ)
     async function manualPairCreation(selectedPlayers, tournamentType) {
         return new Promise((resolve) => {
             const isThreePairs = tournamentType === 'pairs_round_robin_3';
@@ -2459,6 +2459,16 @@
             `;
             
             let pairs = Array(pairCount).fill().map(() => [null, null]);
+            
+            // Локальные функции для работы с диалогом
+            function removeFromPair(pairIndex) {
+                pairs[pairIndex] = [null, null];
+                renderPairDialog();
+            }
+            
+            function selectMatch(index) {
+                // Эта функция не используется в этом диалоге, оставлена для совместимости
+            }
             
             function renderPairDialog() {
                 let html = `
@@ -2556,7 +2566,7 @@
                                     <div style="font-size: 12px; color: #666;">Рейтинг: ${players[pair[1]]?.rating || 1000}</div>
                                 </div>
                             </div>
-                            <button onclick="removeFromPair(${index})" 
+                            <button onclick="event.stopPropagation(); event.preventDefault(); window.currentPairDialog.removeFromPair(${index})" 
                                     style="
                                         background: #f44336;
                                         color: white;
@@ -2596,6 +2606,9 @@
                 `;
                 
                 dialogContent.innerHTML = html;
+                
+                // Сохраняем функции в объекте window для доступа из HTML
+                window.currentPairDialog = { removeFromPair, selectMatch };
                 
                 // Добавляем обработчики событий для перетаскивания
                 setTimeout(() => {
@@ -2668,20 +2681,16 @@
                 });
             }
             
-            // Глобальная функция для удаления из пары
-            window.removeFromPair = function(pairIndex) {
-                pairs[pairIndex] = [null, null];
-                renderPairDialog();
-            };
-            
+            // Инициализация диалога
             renderPairDialog();
             
             dialogDiv.appendChild(dialogContent);
             document.body.appendChild(dialogDiv);
             
-            // Ожидаем подтверждения или отмены
+            // Обработчики событий для кнопок
             document.getElementById('cancelBtn').onclick = () => {
                 document.body.removeChild(dialogDiv);
+                delete window.currentPairDialog;
                 resolve(null);
             };
             
@@ -2701,6 +2710,7 @@
                 }
                 
                 document.body.removeChild(dialogDiv);
+                delete window.currentPairDialog;
                 resolve(pairs);
             };
         });
@@ -4009,7 +4019,7 @@
             
             matchChoices.forEach((choice, index) => {
                 html += `
-                    <button onclick="selectMatch(${index})" 
+                    <button onclick="window.currentSelectDialog.selectMatch(${index})" 
                             style="
                                 padding: 12px;
                                 background: #f8f9fa;
@@ -4039,15 +4049,21 @@
             dialogDiv.appendChild(dialogContent);
             document.body.appendChild(dialogDiv);
             
-            // Глобальные функции для выбора матча
-            window.selectMatch = function(index) {
-                const choice = matchChoices[index];
-                document.body.removeChild(dialogDiv);
-                resolve(choice);
+            // Создаем объект с функциями для диалога
+            const selectDialog = {
+                selectMatch: function(index) {
+                    const choice = matchChoices[index];
+                    document.body.removeChild(dialogDiv);
+                    delete window.currentSelectDialog;
+                    resolve(choice);
+                }
             };
+            
+            window.currentSelectDialog = selectDialog;
             
             document.getElementById('cancelBtn').onclick = () => {
                 document.body.removeChild(dialogDiv);
+                delete window.currentSelectDialog;
                 resolve(null);
             };
         });
