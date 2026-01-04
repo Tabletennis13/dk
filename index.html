@@ -2033,6 +2033,7 @@
                                 <option value="round_robin_3">Круговой турнир (3 игрока)</option>
                                 <option value="round_robin_4">Круговой турнир (4 игрока)</option>
                                 <option value="round_robin_5">Круговой турнир (5 игроков)</option>
+                                <option value="round_robin_5_bo3">Круговой турнир (5 игроков, до 3 партий)</option>
                                 <option value="round_robin_6">Круговой турнир (6 игроков)</option>
                                 <option value="single_elimination_4">Олимпийская система (4 игрока)</option>
                                 <option value="single_elimination_8">Олимпийская система (8 игрока)</option>
@@ -2349,6 +2350,14 @@
                 tournamentTypeName = 'Круговой турнир (5 игроков)';
                 if (selectedPlayers.length !== 5) {
                     showNotification(`Для кругового турнира нужно выбрать ровно 5 игроков!`, 'error');
+                    return;
+                }
+                break;
+            case 'round_robin_5_bo3':
+                requiredPlayers = 5;
+                tournamentTypeName = 'Круговой турнир (5 игроков, до 3 партий)';
+                if (selectedPlayers.length !== 5) {
+                    showNotification(`Для кругового турнира на 5 игроков нужно выбрать ровно 5 игроков!`, 'error');
                     return;
                 }
                 break;
@@ -2950,6 +2959,55 @@
             case 'round_robin_3':
             case 'round_robin_4':
             case 'round_robin_5':
+                // Круговой турнир: каждый играет с каждым
+                for (let i = 0; i < players.length; i++) {
+                    for (let j = i + 1; j < players.length; j++) {
+                        matches.push({
+                            id: `${tournament.id}_${i}_${j}`,
+                            tournament_id: tournament.id,
+                            round: 1,
+                            match_number: matches.length + 1,
+                            player1: players[i],
+                            player2: players[j],
+                            winner: null,
+                            score: null,
+                            player1_games: 0,
+                            player2_games: 0,
+                            player1_points: 0,
+                            player2_points: 0,
+                            is_final: false,
+                            status: 'scheduled'
+                        });
+                    }
+                }
+                break;
+                
+            case 'round_robin_5_bo3':
+                // Круговой турнир 5 игроков с возможностью до 3 партий в матче
+                for (let i = 0; i < players.length; i++) {
+                    for (let j = i + 1; j < players.length; j++) {
+                        matches.push({
+                            id: `${tournament.id}_${i}_${j}`,
+                            tournament_id: tournament.id,
+                            round: 1,
+                            match_number: matches.length + 1,
+                            player1: players[i],
+                            player2: players[j],
+                            winner: null,
+                            score: null,
+                            player1_games: 0,
+                            player2_games: 0,
+                            player1_points: 0,
+                            player2_points: 0,
+                            is_final: false,
+                            status: 'scheduled',
+                            max_games: 3, // Максимальное количество партий
+                            is_bo3: true  // Флаг Best of 3
+                        });
+                    }
+                }
+                break;
+                
             case 'round_robin_6':
                 // Круговой турнир: каждый играет с каждым
                 for (let i = 0; i < players.length; i++) {
@@ -3349,6 +3407,7 @@
     // Функция для отображения таблицы обычного кругового турнира
     function displayRegularRoundRobinTable(tournament, container, matches) {
         const players = tournament.players;
+        const isBo3Tournament = tournament.type === 'round_robin_5_bo3';
         
         // Рассчитываем статистику для каждого игрока
         const stats = {};
@@ -3360,7 +3419,8 @@
                 games_lost: 0,
                 points_won: 0,
                 points_lost: 0,
-                matches_played: 0
+                matches_played: 0,
+                bonus_points: 0
             };
         });
         
@@ -3370,9 +3430,18 @@
                 if (match.winner === match.player1) {
                     stats[match.player1].wins++;
                     stats[match.player2].losses++;
+                    
+                    // Для формата Best of 3 добавляем дополнительные очки за победы 2:0
+                    if (match.is_bo3 && match.player1_games === 2 && match.player2_games === 0) {
+                        stats[match.player1].bonus_points++;
+                    }
                 } else if (match.winner === match.player2) {
                     stats[match.player2].wins++;
                     stats[match.player1].losses++;
+                    
+                    if (match.is_bo3 && match.player2_games === 2 && match.player1_games === 0) {
+                        stats[match.player2].bonus_points++;
+                    }
                 }
                 
                 stats[match.player1].games_won += (match.player1_games || 0);
@@ -3390,43 +3459,103 @@
             }
         });
         
-        // Сортируем игроков по количеству побед, затем по разнице партий, затем по разнице очков
-        const sortedPlayers = [...players].sort((a, b) => {
-            const statA = stats[a];
-            const statB = stats[b];
-            
-            // По победам
-            if (statB.wins !== statA.wins) {
-                return statB.wins - statA.wins;
-            }
-            
-            // По разнице партий
-            const gamesDiffA = statA.games_won - statA.games_lost;
-            const gamesDiffB = statB.games_won - statB.games_lost;
-            if (gamesDiffB !== gamesDiffA) {
-                return gamesDiffB - gamesDiffA;
-            }
-            
-            // По разнице очков
-            const pointsDiffA = statA.points_won - statA.points_lost;
-            const pointsDiffB = statB.points_won - statB.points_lost;
-            return pointsDiffB - pointsDiffA;
-        });
+        // Сортируем игроков
+        let sortedPlayers;
+        if (isBo3Tournament) {
+            // Для формата Best of 3 сортируем по очкам
+            sortedPlayers = [...players].sort((a, b) => {
+                const statA = stats[a];
+                const statB = stats[b];
+                
+                // По очкам (для формата Best of 3)
+                const pointsA = (statA.wins * 2) + (statA.bonus_points || 0);
+                const pointsB = (statB.wins * 2) + (statB.bonus_points || 0);
+                if (pointsB !== pointsA) {
+                    return pointsB - pointsA;
+                }
+                
+                // По победам
+                if (statB.wins !== statA.wins) {
+                    return statB.wins - statA.wins;
+                }
+                
+                // По разнице партий
+                const gamesDiffA = statA.games_won - statA.games_lost;
+                const gamesDiffB = statB.games_won - statB.games_lost;
+                if (gamesDiffB !== gamesDiffA) {
+                    return gamesDiffB - gamesDiffA;
+                }
+                
+                // По разнице очков
+                const pointsDiffA = statA.points_won - statA.points_lost;
+                const pointsDiffB = statB.points_won - statB.points_lost;
+                return pointsDiffB - pointsDiffA;
+            });
+        } else {
+            // Стандартная сортировка для обычных турниров
+            sortedPlayers = [...players].sort((a, b) => {
+                const statA = stats[a];
+                const statB = stats[b];
+                
+                // По победам
+                if (statB.wins !== statA.wins) {
+                    return statB.wins - statA.wins;
+                }
+                
+                // По разнице партий
+                const gamesDiffA = statA.games_won - statA.games_lost;
+                const gamesDiffB = statB.games_won - statB.games_lost;
+                if (gamesDiffB !== gamesDiffA) {
+                    return gamesDiffB - gamesDiffA;
+                }
+                
+                // По разнице очков
+                const pointsDiffA = statA.points_won - statA.points_lost;
+                const pointsDiffB = statB.points_won - statB.points_lost;
+                return pointsDiffB - pointsDiffA;
+            });
+        }
+        
+        // Определяем заголовок таблицы
+        const tableTitle = isBo3Tournament ? 
+            '🏓 Турнирная таблица (Best of 3)' : 
+            '🏓 Турнирная таблица';
+        
+        // Определяем заголовки колонок
+        let tableHeaders = '';
+        if (isBo3Tournament) {
+            tableHeaders = `
+                <tr>
+                    <th>Место</th>
+                    <th>Игрок</th>
+                    <th>Очки</th>
+                    <th>Матчи</th>
+                    <th>В-П</th>
+                    <th>Партии +/-</th>
+                    <th>Очки +/-</th>
+                    <th>Действия</th>
+                </tr>
+            `;
+        } else {
+            tableHeaders = `
+                <tr>
+                    <th>Место</th>
+                    <th>Игрок</th>
+                    <th>Матчи</th>
+                    <th>В-П</th>
+                    <th>Партии +/-</th>
+                    <th>Очки +/-</th>
+                    <th>Действия</th>
+                </tr>
+            `;
+        }
         
         let html = `
-            <h3>🏓 Турнирная таблица</h3>
+            <h3>${tableTitle}</h3>
             <div class="table-container">
                 <table class="round-robin-table">
                     <thead>
-                        <tr>
-                            <th>Место</th>
-                            <th>Игрок</th>
-                            <th>Матчи</th>
-                            <th>В-П</th>
-                            <th>Партии +/-</th>
-                            <th>Очки +/-</th>
-                            <th>Действия</th>
-                        </tr>
+                        ${tableHeaders}
                     </thead>
                     <tbody>
         `;
@@ -3436,48 +3565,103 @@
             const gamesDiff = stat.games_won - stat.games_lost;
             const pointsDiff = stat.points_won - stat.points_lost;
             
-            html += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>
-                        <div class="player-cell" onclick="showPlayerProfile('${player}')" style="cursor: pointer;">
-                            <img src="${players[player]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
-                                 class="avatar" style="width: 32px; height: 32px;">
-                            <span>${player}</span>
-                        </div>
-                    </td>
-                    <td>${stat.matches_played}</td>
-                    <td>${stat.wins}-${stat.losses}</td>
-                    <td>${gamesDiff > 0 ? '+' : ''}${gamesDiff}</td>
-                    <td>${pointsDiff > 0 ? '+' : ''}${pointsDiff}</td>
-                    <td>
-                        <button class="action-btn add-btn" onclick="enterMatchResult('${tournament.id}', '${player}')" 
-                                ${!isAdmin ? 'disabled style="opacity: 0.5;"' : ''}>
-                            ✏️ Внести результат
-                        </button>
-                    </td>
-                </tr>
-            `;
+            if (isBo3Tournament) {
+                const points = (stat.wins * 2) + (stat.bonus_points || 0);
+                
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <div class="player-cell" onclick="showPlayerProfile('${player}')" style="cursor: pointer;">
+                                <img src="${players[player]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                     class="avatar" style="width: 32px; height: 32px;">
+                                <span>${player}</span>
+                            </div>
+                        </td>
+                        <td><strong>${points}</strong></td>
+                        <td>${stat.matches_played}</td>
+                        <td>${stat.wins}-${stat.losses}</td>
+                        <td>${gamesDiff > 0 ? '+' : ''}${gamesDiff}</td>
+                        <td>${pointsDiff > 0 ? '+' : ''}${pointsDiff}</td>
+                        <td>
+                            <button class="action-btn add-btn" onclick="enterMatchResult('${tournament.id}', '${player}')" 
+                                    ${!isAdmin ? 'disabled style="opacity: 0.5;"' : ''}>
+                                ✏️ Внести результат
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <div class="player-cell" onclick="showPlayerProfile('${player}')" style="cursor: pointer;">
+                                <img src="${players[player]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                     class="avatar" style="width: 32px; height: 32px;">
+                                <span>${player}</span>
+                            </div>
+                        </td>
+                        <td>${stat.matches_played}</td>
+                        <td>${stat.wins}-${stat.losses}</td>
+                        <td>${gamesDiff > 0 ? '+' : ''}${gamesDiff}</td>
+                        <td>${pointsDiff > 0 ? '+' : ''}${pointsDiff}</td>
+                        <td>
+                            <button class="action-btn add-btn" onclick="enterMatchResult('${tournament.id}', '${player}')" 
+                                    ${!isAdmin ? 'disabled style="opacity: 0.5;"' : ''}>
+                                ✏️ Внести результат
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
         });
         
         html += `
                     </tbody>
                 </table>
             </div>
-            
-            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                <h4>📊 Правила определения мест:</h4>
-                <ol style="margin-left: 20px;">
-                    <li>Количество побед</li>
-                    <li>Разница выигранных и проигранных партий</li>
-                    <li>Разница выигранных и проигранных очков</li>
-                    <li>Личная встреча (если применимо)</li>
-                </ol>
-                <p style="margin-top: 10px; color: #666;">
-                    <strong>Финалисты:</strong> Двое лучших игроков выходят в финал
-                </p>
-            </div>
         `;
+        
+        // Добавляем пояснение о системе подсчета очков для Best of 3
+        if (isBo3Tournament) {
+            html += `
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <h4>📊 Система подсчета очков (Best of 3):</h4>
+                    <ul style="margin-left: 20px;">
+                        <li>Победа 2:0 = 3 очка</li>
+                        <li>Победа 2:1 = 2 очка</li>
+                        <li>Поражение 1:2 = 1 очко</li>
+                        <li>Поражение 0:2 = 0 очков</li>
+                    </ul>
+                    <p style="margin-top: 10px; color: #666;">
+                        <strong>Правила определения мест:</strong>
+                        <ol style="margin-left: 20px; margin-top: 5px;">
+                            <li>Количество очков</li>
+                            <li>Количество побед</li>
+                            <li>Разница выигранных и проигранных партий</li>
+                            <li>Разница выигранных и проигранных очков</li>
+                            <li>Личная встреча</li>
+                        </ol>
+                    </p>
+                </div>
+            `;
+        } else {
+            html += `
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <h4>📊 Правила определения мест:</h4>
+                    <ol style="margin-left: 20px;">
+                        <li>Количество побед</li>
+                        <li>Разница выигранных и проигранных партий</li>
+                        <li>Разница выигранных и проигранных очков</li>
+                        <li>Личная встреча (если применимо)</li>
+                    </ol>
+                    <p style="margin-top: 10px; color: #666;">
+                        <strong>Финалисты:</strong> Двое лучших игроков выходят в финал
+                    </p>
+                </div>
+            `;
+        }
         
         container.innerHTML = html;
     }
@@ -4087,6 +4271,7 @@
         }
 
         const isPairsTournament = tournament.is_pairs;
+        const isBo3Tournament = tournament.type === 'round_robin_5_bo3' || match.is_bo3;
 
         if (match.winner) {
             if (!confirm('Результат уже внесен. Перезаписать?')) {
@@ -4107,18 +4292,105 @@
                 match.player2;
         }
 
-        // Запрашиваем результат
-        const score = prompt(`Введите счет матча ${player1Name} vs ${player2Name} (например, 3:2):`);
-        if (!score) return;
+        // Для формата до 3 партий запрашиваем подробный ввод
+        let score, player1Games, player2Games, player1Points = 0, player2Points = 0;
+        
+        if (isBo3Tournament) {
+            // Запрашиваем результаты каждой партии
+            const gamesInput = prompt(
+                `Введите результаты партий для матча ${player1Name} vs ${player2Name}\n` +
+                `Формат: счет каждой партии через запятую\n` +
+                `Пример: 11:9,9:11,11:7 (3 партии)\n` +
+                `Или: 11:8,11:5 (2 партии, если досрочная победа)`
+            );
+            
+            if (!gamesInput) return;
+            
+            const games = gamesInput.split(',').map(g => g.trim());
+            
+            // Проверяем корректность ввода
+            let player1Wins = 0;
+            let player2Wins = 0;
+            let validInput = true;
+            
+            for (let i = 0; i < games.length; i++) {
+                const game = games[i];
+                const [p1Str, p2Str] = game.split(':');
+                const p1Points = parseInt(p1Str);
+                const p2Points = parseInt(p2Str);
+                
+                if (isNaN(p1Points) || isNaN(p2Points)) {
+                    validInput = false;
+                    break;
+                }
+                
+                player1Points += p1Points;
+                player2Points += p2Points;
+                
+                // Определяем победителя партии
+                if (p1Points > p2Points) {
+                    player1Wins++;
+                } else if (p2Points > p1Points) {
+                    player2Wins++;
+                }
+            }
+            
+            if (!validInput) {
+                showNotification('Неверный формат ввода! Используйте формат "11:9,9:11,11:7"', 'error');
+                return;
+            }
+            
+            // Проверяем, что матч завершен правильно
+            if (player1Wins === 2 && player2Wins === 0) {
+                score = "2:0";
+                player1Games = 2;
+                player2Games = 0;
+            } else if (player1Wins === 0 && player2Wins === 2) {
+                score = "0:2";
+                player1Games = 0;
+                player2Games = 2;
+            } else if (player1Wins === 2 && player2Wins === 1) {
+                score = "2:1";
+                player1Games = 2;
+                player2Games = 1;
+            } else if (player1Wins === 1 && player2Wins === 2) {
+                score = "1:2";
+                player1Games = 1;
+                player2Games = 2;
+            } else {
+                showNotification('Неверный счет! Матч должен завершиться со счетом 2:0 или 2:1', 'error');
+                return;
+            }
+            
+        } else {
+            // Стандартный ввод для обычных матчей
+            score = prompt(`Введите счет матча ${player1Name} vs ${player2Name} (например, 3:2):`);
+            if (!score) return;
 
-        // Парсим счет
-        const [player1GamesStr, player2GamesStr] = score.split(':');
-        const player1Games = parseInt(player1GamesStr);
-        const player2Games = parseInt(player2GamesStr);
+            // Парсим счет
+            const [player1GamesStr, player2GamesStr] = score.split(':');
+            player1Games = parseInt(player1GamesStr);
+            player2Games = parseInt(player2GamesStr);
 
-        if (isNaN(player1Games) || isNaN(player2Games)) {
-            showNotification('Неверный формат счета! Используйте формат "3:2"', 'error');
-            return;
+            if (isNaN(player1Games) || isNaN(player2Games)) {
+                showNotification('Неверный формат счета! Используйте формат "3:2"', 'error');
+                return;
+            }
+
+            // Запрашиваем очки для расчета разницы (опционально)
+            const pointsInput = prompt('Введите очки для расчета разницы (например, 11:9,11:8,9:11,11:6,11:7 через запятую):\n(Оставьте пустым, если не нужно)');
+            
+            if (pointsInput) {
+                const games = pointsInput.split(',');
+                games.forEach(game => {
+                    const [p1PointsStr, p2PointsStr] = game.split(':');
+                    const p1Points = parseInt(p1PointsStr) || 0;
+                    const p2Points = parseInt(p2PointsStr) || 0;
+                    
+                    player1Points += p1Points;
+                    player2Points += p2Points;
+                });
+            }
         }
 
         // Определяем победителя
@@ -4129,24 +4401,6 @@
             winner = match.player2; // Для парных турниров сохраняем первого игрока второй пары
         } else {
             winner = 'draw';
-        }
-
-        // Запрашиваем очки для расчета разницы (опционально)
-        const pointsInput = prompt('Введите очки для расчета разницы (например, 11:9,11:8,9:11,11:6,11:7 через запятую):\n(Оставьте пустым, если не нужно)');
-        
-        let player1Points = 0;
-        let player2Points = 0;
-        
-        if (pointsInput) {
-            const games = pointsInput.split(',');
-            games.forEach(game => {
-                const [p1PointsStr, p2PointsStr] = game.split(':');
-                const p1Points = parseInt(p1PointsStr) || 0;
-                const p2Points = parseInt(p2PointsStr) || 0;
-                
-                player1Points += p1Points;
-                player2Points += p2Points;
-            });
         }
 
         // Обновляем матч
@@ -4432,7 +4686,8 @@
                 games_won: 0,
                 games_lost: 0,
                 points_won: 0,
-                points_lost: 0
+                points_lost: 0,
+                bonus_points: 0
             };
         });
         
@@ -4440,9 +4695,18 @@
             if (match.winner === match.player1) {
                 stats[match.player1].wins++;
                 stats[match.player2].losses++;
+                
+                // Для формата Best of 3 добавляем дополнительные очки за победы 2:0
+                if (match.is_bo3 && match.player1_games === 2 && match.player2_games === 0) {
+                    stats[match.player1].bonus_points++;
+                }
             } else if (match.winner === match.player2) {
                 stats[match.player2].wins++;
                 stats[match.player1].losses++;
+                
+                if (match.is_bo3 && match.player2_games === 2 && match.player1_games === 0) {
+                    stats[match.player2].bonus_points++;
+                }
             }
             
             stats[match.player1].games_won += (match.player1_games || 0);
@@ -4457,27 +4721,61 @@
         });
         
         // Сортируем игроков
-        const sortedPlayers = [...tournament.players].sort((a, b) => {
-            const statA = stats[a];
-            const statB = stats[b];
-            
-            // По победам
-            if (statB.wins !== statA.wins) {
-                return statB.wins - statA.wins;
-            }
-            
-            // По разнице партий
-            const gamesDiffA = statA.games_won - statA.games_lost;
-            const gamesDiffB = statB.games_won - statB.games_lost;
-            if (gamesDiffB !== gamesDiffA) {
-                return gamesDiffB - gamesDiffA;
-            }
-            
-            // По разнице очков
-            const pointsDiffA = statA.points_won - statA.points_lost;
-            const pointsDiffB = statB.points_won - statB.points_lost;
-            return pointsDiffB - pointsDiffA;
-        });
+        let sortedPlayers;
+        if (tournament.type === 'round_robin_5_bo3') {
+            // Для формата Best of 3 сортируем по очкам
+            sortedPlayers = [...tournament.players].sort((a, b) => {
+                const statA = stats[a];
+                const statB = stats[b];
+                
+                // По очкам (для формата Best of 3)
+                const pointsA = (statA.wins * 2) + (statA.bonus_points || 0);
+                const pointsB = (statB.wins * 2) + (statB.bonus_points || 0);
+                if (pointsB !== pointsA) {
+                    return pointsB - pointsA;
+                }
+                
+                // По победам
+                if (statB.wins !== statA.wins) {
+                    return statB.wins - statA.wins;
+                }
+                
+                // По разнице партий
+                const gamesDiffA = statA.games_won - statA.games_lost;
+                const gamesDiffB = statB.games_won - statB.games_lost;
+                if (gamesDiffB !== gamesDiffA) {
+                    return gamesDiffB - gamesDiffA;
+                }
+                
+                // По разнице очков
+                const pointsDiffA = statA.points_won - statA.points_lost;
+                const pointsDiffB = statB.points_won - statB.points_lost;
+                return pointsDiffB - pointsDiffA;
+            });
+        } else {
+            // Стандартная сортировка для обычных турниров
+            sortedPlayers = [...tournament.players].sort((a, b) => {
+                const statA = stats[a];
+                const statB = stats[b];
+                
+                // По победам
+                if (statB.wins !== statA.wins) {
+                    return statB.wins - statA.wins;
+                }
+                
+                // По разнице партий
+                const gamesDiffA = statA.games_won - statA.games_lost;
+                const gamesDiffB = statB.games_won - statB.games_lost;
+                if (gamesDiffB !== gamesDiffA) {
+                    return gamesDiffB - gamesDiffA;
+                }
+                
+                // По разнице очков
+                const pointsDiffA = statA.points_won - statA.points_lost;
+                const pointsDiffB = statB.points_won - statB.points_lost;
+                return pointsDiffB - pointsDiffA;
+            });
+        }
         
         // Победитель - первый в списке
         if (sortedPlayers.length > 0) {
@@ -4987,7 +5285,7 @@
         const canvas = document.getElementById('playerFormChart');
         if (!canvas) return;
         
-        // Получаем последние 10 матчей игрока
+        // Получаем последние 10 матчи игрока
         const playerMatches = matches
             .filter(m => m.player1 === playerName || m.player2 === playerName)
             .sort((a, b) => new Date(b.date) - new Date(a.date))
