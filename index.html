@@ -3190,18 +3190,24 @@
     // ============================================
     // ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
     // ============================================
-    async function init() {
-        console.log('🚀 Запуск приложения...');
-        
-        checkAutoLogin();
-        
-        setMatchDateToToday();
-        
-        await initSupabase();
-        
-        updatePlayerSelects();
-        
-        console.log('✅ Приложение запущено');
+ async function init() {
+    console.log('🚀 Запуск приложения...');
+    
+    checkAutoLogin(); // Проверка автовхода админа
+    
+    setMatchDateToToday();
+    
+    await initSupabase();
+    
+    updatePlayerSelects();
+    
+    // Проверка автовхода в кабинет ставок
+    if (typeof checkAutoLoginForBets === 'function') {
+        checkAutoLoginForBets();
+    }
+    
+    console.log('✅ Приложение запущено');
+     
     }
     
     if (document.readyState === 'loading') {
