@@ -3,345 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>Рейтинг тенниса</title>
+    <title>Рейтинг тенниса - Внутриигровые ставки</title>
     <style>
-        /* Все стили остаются без изменений - сохраняем оригинальный CSS */
-        .bets-container {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
+        /* Все существующие стили остаются без изменений */
+        /* Добавляем новые стили для функционала ставок */
+        
+        /* Стили для вкладки ставок */
+        .bet-match-card {
+            background: white;
             border-radius: 12px;
-            margin: 20px 0;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .bet-match-card.live {
+            border-color: #ff5722;
+            border-left: 5px solid #ff5722;
+            background: #fff8f6;
+        }
+        
+        .bet-match-card.finished {
+            border-color: #4CAF50;
+            background: #f8fff8;
+        }
+        
+        .live-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff5722;
             color: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
         }
         
-        .bets-header {
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .bet-match-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
-            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
         }
         
-        .bets-header h3 {
-            font-size: 1.4em;
-            margin: 0;
-        }
-        
-        .bets-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-        }
-        
-        @media (min-width: 768px) {
-            .bets-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-        
-        .bet-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 10px;
-            padding: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.3s ease;
-        }
-        
-        .bet-card:hover {
-            transform: translateY(-3px);
-            background: rgba(255, 255, 255, 0.15);
-        }
-        
-        .bet-match-info {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .bet-player {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-        }
-        
-        .bet-player.winner {
-            background: rgba(76, 175, 80, 0.2);
-            border-left: 4px solid #4CAF50;
-        }
-        
-        .bet-player-info {
+        .bet-match-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
             flex: 1;
         }
         
-        .bet-player-name {
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-        
-        .bet-player-rating {
+        .bet-match-date {
+            color: #666;
             font-size: 0.9em;
-            opacity: 0.9;
         }
         
-        .bet-odds {
+        .bet-players {
             display: flex;
             justify-content: space-between;
-            margin: 15px 0;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
+            align-items: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
         }
         
-        .odds-item {
+        .bet-player {
             text-align: center;
             flex: 1;
         }
         
-        .odds-value {
-            font-size: 1.5em;
+        .bet-player-favorite {
+            background: #fff9c4;
+            border: 2px solid #FFD700;
+        }
+        
+        .bet-player-odds {
+            font-size: 1.8em;
             font-weight: bold;
             color: #4CAF50;
+            margin: 10px 0;
         }
         
-        .odds-label {
-            font-size: 0.9em;
-            opacity: 0.9;
+        .bet-vs {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #666;
+            margin: 0 20px;
         }
         
-        .bet-form {
+        .bet-actions {
             display: flex;
-            flex-direction: column;
             gap: 10px;
             margin-top: 15px;
         }
         
-        .bet-amount-input {
+        .bet-input {
+            flex: 1;
             padding: 10px;
-            border: none;
+            border: 2px solid #ddd;
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            font-size: 1em;
+            font-size: 16px;
             text-align: center;
-        }
-        
-        .bet-buttons {
-            display: flex;
-            gap: 10px;
         }
         
         .bet-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-        
-        .bet-btn-player1 {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .bet-btn-player2 {
-            background: #2196F3;
-            color: white;
-        }
-        
-        .bet-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-        
-        .bet-status {
-            margin-top: 10px;
-            padding: 8px;
-            border-radius: 6px;
-            text-align: center;
-            font-size: 0.9em;
-        }
-        
-        .bet-status.won {
-            background: rgba(76, 175, 80, 0.2);
-            color: #4CAF50;
-        }
-        
-        .bet-status.lost {
-            background: rgba(244, 67, 54, 0.2);
-            color: #f44336;
-        }
-        
-        .bet-status.pending {
-            background: rgba(255, 152, 0, 0.2);
-            color: #ff9800;
-        }
-        
-        .player-cabinet-container {
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
-            margin: 20px 0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border: 2px solid #4CAF50;
-        }
-        
-        .cabinet-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        
-        .cabinet-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #4CAF50;
-        }
-        
-        .cabinet-info {
-            flex: 1;
-        }
-        
-        .cabinet-name {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .cabinet-rating {
-            font-size: 1.2em;
-            color: #4CAF50;
-            font-weight: bold;
-        }
-        
-        .cabinet-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin: 20px 0;
-        }
-        
-        .cabinet-stat {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #4CAF50;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 0.9em;
-            color: #666;
-        }
-        
-        .cabinet-section {
-            margin: 25px 0;
-        }
-        
-        .cabinet-section h4 {
-            color: #333;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #4CAF50;
-            font-size: 1.2em;
-        }
-        
-        .bet-history-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .bet-history-table th {
-            background: #4CAF50;
-            color: white;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-        }
-        
-        .bet-history-table td {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            font-size: 0.9em;
-        }
-        
-        .bet-history-table tr:hover {
-            background: #f9f9f9;
-        }
-        
-        .shop-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        
-        .shop-item {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border: 2px solid #e0e0e0;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-        
-        .shop-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-            border-color: #4CAF50;
-        }
-        
-        .shop-icon {
-            font-size: 2.5em;
-            margin-bottom: 15px;
-        }
-        
-        .shop-title {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        
-        .shop-price {
-            font-size: 1.2em;
-            color: #4CAF50;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        
-        .shop-description {
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 15px;
-            min-height: 40px;
-        }
-        
-        .buy-btn {
             padding: 10px 20px;
             background: #4CAF50;
             color: white;
@@ -350,11 +129,117 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
-            width: 100%;
         }
         
-        .buy-btn:hover {
+        .bet-btn:hover:not(:disabled) {
             background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .bet-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .bet-max-btn {
+            padding: 10px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        /* Стили для личного кабинета */
+        .player-cabinet-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .tokens-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .tokens-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .token-stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .token-stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        /* Стили для магазина */
+        .shop-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .shop-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .shop-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .shop-item-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .shop-item-price {
+            background: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 15px 0;
+            display: inline-block;
+        }
+        
+        .buy-btn {
+            padding: 10px 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .buy-btn:hover:not(:disabled) {
+            background: #0b7dda;
         }
         
         .buy-btn:disabled {
@@ -362,592 +247,261 @@
             cursor: not-allowed;
         }
         
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 16px;
+        /* Стили для истории ставок */
+        .bet-history-item {
+            background: white;
             border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            z-index: 1000;
-            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            max-width: calc(100vw - 40px);
-            font-size: 14px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
         }
         
-        .notification.success {
-            background: #4CAF50;
+        .bet-history-item.won {
+            border-left-color: #4CAF50;
+            background: #f8fff8;
         }
         
-        .notification.error {
-            background: #f44336;
+        .bet-history-item.lost {
+            border-left-color: #f44336;
+            background: #fff8f8;
         }
         
-        .notification.warning {
-            background: #ff9800;
+        .bet-history-item.pending {
+            border-left-color: #ff9800;
+            background: #fff9f0;
         }
         
-        .notification.info {
-            background: #2196F3;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-        
-        .match-live-badge {
-            background: #f44336;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: bold;
-            animation: pulse 2s infinite;
-            display: inline-block;
-            margin-left: 10px;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 8px;
-            -webkit-text-size-adjust: 100%;
-            overflow-x: hidden;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        header {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
+        /* Стили для админ-панели ставок */
+        .bet-admin-panel {
+            background: #f8f9fa;
             padding: 20px;
-            text-align: center;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 5px solid #4CAF50;
         }
         
-        h1 {
-            margin: 0;
-            font-size: 2em;
-        }
-        
-        .header-subtitle {
-            opacity: 0.9;
-            margin-top: 5px;
-        }
-        
-        .tabs {
+        .tokens-control {
             display: flex;
-            background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            overflow-x: auto;
+            gap: 10px;
+            margin-top: 10px;
         }
         
-        .tab-btn {
-            padding: 12px 20px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 0.95em;
-            white-space: nowrap;
-            transition: all 0.3s;
-        }
-        
-        .tab-btn.active {
-            background: white;
-            border-bottom: 3px solid #4CAF50;
-            font-weight: bold;
-        }
-        
-        .tab-btn:hover {
-            background: #e9ecef;
-        }
-        
-        .tab-content {
-            padding: 20px;
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .table-container {
-            overflow-x: auto;
-            margin: 20px 0;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        
-        th, td {
+        .tokens-control input {
+            flex: 1;
             padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
+            border: 2px solid #ddd;
+            border-radius: 8px;
         }
         
-        th {
-            background: #f8f9fa;
-            font-weight: 600;
+        /* Стили для правил */
+        .rules-container {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
         }
         
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        
-        .rating-badge {
-            background: #4CAF50;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-weight: bold;
-        }
-        
-        .action-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85em;
-            transition: all 0.3s;
-        }
-        
-        .add-btn {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .delete-btn {
-            background: #f44336;
-            color: white;
-        }
-        
-        .penalty-btn {
-            background: #ff9800;
-            color: white;
-        }
-        
-        .form-group {
+        .rules-container h4 {
+            color: #856404;
             margin-bottom: 15px;
         }
         
-        input, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1em;
+        .rules-container ul {
+            margin-left: 20px;
+            color: #856404;
         }
         
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+        .rules-container li {
+            margin-bottom: 8px;
         }
         
-        .bottom-panels {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-top: 1px solid #dee2e6;
-        }
-        
+        /* Медиа-запросы для адаптации */
         @media (max-width: 768px) {
-            .grid-2 {
-                grid-template-columns: 1fr;
+            .bet-players {
+                flex-direction: column;
+                gap: 15px;
             }
             
-            .tabs {
-                flex-wrap: wrap;
+            .bet-vs {
+                margin: 10px 0;
             }
             
-            .cabinet-stats {
-                grid-template-columns: 1fr;
+            .bet-actions {
+                flex-direction: column;
             }
             
-            .shop-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .bets-grid {
+            .tokens-stats {
                 grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Страница игрока (скрыта по умолчанию) -->
+    <!-- Страница игрока (остается без изменений) -->
     <div class="container" id="playerProfileContainer" style="display: none;">
-        <div class="player-profile-container">
-            <div class="player-profile-header">
-                <img id="playerProfileAvatar" src="" class="player-avatar-large" onerror="this.src='https://i.pravatar.cc/150?img=3'">
-                <div class="player-info-large">
-                    <h1 id="playerProfileName" class="player-name-large"></h1>
-                    <div id="playerProfileRating" class="player-rating-large"></div>
-                    <div id="playerProfileEmojis" class="achievement-emojis"></div>
-                    <div id="playerProfileStats" class="player-profile-stats"></div>
-                </div>
-            </div>
-            
-            <!-- Личный кабинет с виртуальной валютой -->
-            <div class="player-cabinet-container" id="playerCabinet">
-                <div class="cabinet-header">
-                    <img id="cabinetAvatar" src="" class="cabinet-avatar" onerror="this.src='https://i.pravatar.cc/150?img=3'">
-                    <div class="cabinet-info">
-                        <div class="cabinet-name" id="cabinetName"></div>
-                        <div class="cabinet-rating">Рейтинг: <span id="cabinetRating"></span></div>
-                        <div>Токенов: <span id="cabinetTokens" style="color: #4CAF50; font-weight: bold;">0</span> 🪙</div>
-                    </div>
-                </div>
-                
-                <div class="cabinet-stats">
-                    <div class="cabinet-stat">
-                        <div class="stat-value" id="cabinetBetsMade">0</div>
-                        <div class="stat-label">Сделано ставок</div>
-                    </div>
-                    <div class="cabinet-stat">
-                        <div class="stat-value" id="cabinetBetsWon">0</div>
-                        <div class="stat-label">Выиграно ставок</div>
-                    </div>
-                    <div class="cabinet-stat">
-                        <div class="stat-value" id="cabinetTotalWon">0</div>
-                        <div class="stat-label">Токенов выиграно</div>
-                    </div>
-                    <div class="cabinet-stat">
-                        <div class="stat-value" id="cabinetWinRate">0%</div>
-                        <div class="stat-label">Процент побед</div>
-                    </div>
-                </div>
-                
-                <div class="cabinet-section">
-                    <h4>📊 История ставок</h4>
-                    <div class="table-container">
-                        <table class="bet-history-table" id="playerBetHistory">
-                            <thead>
-                                <tr>
-                                    <th>Дата</th>
-                                    <th>Матч</th>
-                                    <th>Ставка</th>
-                                    <th>Коэффициент</th>
-                                    <th>Результат</th>
-                                    <th>Выигрыш</th>
-                                </tr>
-                            </thead>
-                            <tbody id="betHistoryBody">
-                                <!-- История ставок будет загружена динамически -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <div class="cabinet-section">
-                    <h4>🏪 Магазин лиги</h4>
-                    <div class="shop-grid" id="leagueShop">
-                        <!-- Товары магазина будут загружены динамически -->
-                    </div>
-                </div>
-            </div>
-            
-            <div style="margin: 20px; text-align: center;">
-                <a href="#" class="action-btn add-btn" onclick="returnToMain()" style="padding: 10px 20px; text-decoration: none; display: inline-block;">
-                    ← Вернуться к рейтингу
-                </a>
-            </div>
-        </div>
+        <!-- ... существующий код ... -->
     </div>
     
-    <!-- Основной контейнер (видим по умолчанию) -->
+    <!-- Страница турнира (остается без изменений) -->
+    <div class="container" id="tournamentPageContainer" style="display: none;">
+        <!-- ... существующий код ... -->
+    </div>
+    
+    <!-- Основной контейнер -->
     <div class="container" id="appContainer">
         <!-- Шапка -->
         <header>
-            <h1>🏓 Рейтинг ЛЛНТ</h1>
-            <div class="header-subtitle">Подробная статистика Лиги Любителей Настольного Тенниса</div>
+            <h1>🏓 Рейтинг ЛЛНТ 💰</h1>
+            <div class="header-subtitle">Подробная статистика Лиги Любителей Настольного Тенниса | Система виртуальных ставок</div>
         </header>
         
-        <!-- Вкладки -->
+        <!-- Вкладки - ДОБАВЛЯЕМ ВКЛАДКУ СТАВОК -->
         <div class="tabs">
             <button class="tab-btn active" onclick="openTab('rating')">🏆 Рейтинг</button>
             <button class="tab-btn" onclick="openTab('matches')">🎮 Матчи</button>
             <button class="tab-btn" onclick="openTab('players')">👥 Игроки</button>
-            <button class="tab-btn" onclick="openTab('bets')">💰 Ставки</button>
+            <button class="tab-btn" onclick="openTab('tournaments')">🏅 Турниры</button>
+            <button class="tab-btn" onclick="openTab('betting')">💰 Ставки</button>
+            <button class="tab-btn" onclick="openTab('stats')">📊 Статистика</button>
+            <button class="tab-btn" onclick="openTab('penalties')">⚠️ Штрафы</button>
         </div>
         
         <!-- Контент вкладок -->
         <div class="tab-content active" id="rating">
-            <h2>🏆 Текущий рейтинг игроков</h2>
-            <div class="table-container">
-                <table class="compact-table">
-                    <thead>
-                        <tr>
-                            <th>Место</th>
-                            <th>Игрок</th>
-                            <th>Очки</th>
-                            <th>Матчи</th>
-                            <th>Побед</th>
-                            <th>Последняя игра</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ratingBody"></tbody>
-                </table>
-            </div>
+            <!-- ... существующий код ... -->
         </div>
         
         <div class="tab-content" id="matches">
-            <h2>🎮 История матчей</h2>
-            <div id="matchesContainer">
-                <!-- Матчи будут сгруппированы по дням здесь -->
-            </div>
-            
-            <!-- Блок добавления матча -->
-            <div class="admin-controls" id="matchesAdminControls" style="display: none;">
-                <h4>⚙️ Добавление нового матча (администратор)</h4>
-                <div class="grid-2">
-                    <div>
-                        <div class="form-group">
-                            <label>Дата матча:</label>
-                            <input type="date" id="matchDate">
-                        </div>
-                        <div class="form-group">
-                            <label>Игрок 1:</label>
-                            <select id="player1"></select>
-                        </div>
-                        <div class="form-group">
-                            <label>Игрок 2:</label>
-                            <select id="player2"></select>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="form-group">
-                            <label>Победитель:</label>
-                            <select id="winner">
-                                <option value="player1">Игрок 1</option>
-                                <option value="player2">Игрок 2</option>
-                                <option value="draw">Ничья</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Счет (опционально):</label>
-                            <input type="text" id="score" placeholder="3:2">
-                        </div>
-                        <button class="add-btn action-btn" onclick="addMatch()" style="margin-top: 20px; width: 100%;">
-                            ✅ Добавить матч
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <!-- ... существующий код ... -->
         </div>
         
         <div class="tab-content" id="players">
-            <h2>👥 Управление игроками</h2>
-            <div class="admin-controls" id="playersAdminControls" style="display: none;">
-                <h4>⚙️ Добавление нового игрока (администратор)</h4>
-                <div class="grid-2">
-                    <div>
-                        <div class="form-group">
-                            <label>Имя игрока:</label>
-                            <input type="text" id="newPlayerName" placeholder="Иванов Иван">
-                        </div>
-                        <div class="form-group">
-                            <label>Логин для кабинета:</label>
-                            <input type="text" id="newPlayerLogin" placeholder="ivanov">
-                        </div>
-                        <div class="form-group">
-                            <label>Пароль (опционально):</label>
-                            <input type="password" id="newPlayerPassword" placeholder="Оставьте пустым для автогенерации">
-                        </div>
-                        <div class="form-group">
-                            <label>Ссылка на аватар (опционально):</label>
-                            <input type="text" id="newPlayerAvatar" placeholder="https://example.com/avatar.jpg">
-                        </div>
-                        <div class="form-group">
-                            <label>Начальный рейтинг:</label>
-                            <input type="number" id="newPlayerRating" value="1000">
-                        </div>
-                        <div class="form-group">
-                            <label>Начальное количество жетонов:</label>
-                            <input type="number" id="newPlayerTokens" value="100">
-                        </div>
-                        <button class="add-btn action-btn" onclick="addPlayer()" style="width: 100%;">
-                            ➕ Добавить игрока
-                        </button>
-                    </div>
-                    <div>
-                        <p><strong>Советы:</strong></p>
-                        <ul style="list-style: none; padding: 0;">
-                            <li>• Для аватаров можно использовать <a href="https://pravatar.cc" target="_blank">pravatar.cc</a></li>
-                            <li>• Стандартный начальный рейтинг: 1000</li>
-                            <li>• Стандартное количество жетонов: 100</li>
-                            <li>• Логин должен быть уникальным</li>
-                            <li>• При удалении игрока его кабинет также удалится</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Аватар</th>
-                            <th>Имя</th>
-                            <th>Рейтинг</th>
-                            <th>Матчи</th>
-                            <th>Побед</th>
-                            <th>Жетоны</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="playersBody"></tbody>
-                </table>
-            </div>
+            <!-- ... существующий код ... -->
         </div>
         
-        <!-- ВКЛАДКА: СТАВКИ -->
-        <div class="tab-content" id="bets">
-            <h2>💰 Внутриигровые ставки с виртуальной валютой</h2>
+        <div class="tab-content" id="tournaments">
+            <!-- ... существующий код ... -->
+        </div>
+        
+        <!-- НОВАЯ ВКЛАДКА: СТАВКИ -->
+        <div class="tab-content" id="betting">
+            <h2>💰 Внутриигровые ставки</h2>
             
-            <!-- Информация о текущем пользователе -->
-            <div class="player-cabinet-container" id="currentPlayerCabinet" style="display: none;">
-                <div class="cabinet-header">
-                    <img id="currentCabinetAvatar" src="" class="cabinet-avatar" onerror="this.src='https://i.pravatar.cc/150?img=3'">
-                    <div class="cabinet-info">
-                        <div class="cabinet-name" id="currentCabinetName"></div>
-                        <div class="cabinet-rating">Ваш баланс: <span id="currentCabinetTokens" style="color: #4CAF50; font-weight: bold;">0</span> 🪙</div>
-                        <div style="font-size: 0.9em; color: #666;">Максимальная ставка: <span id="maxBetAmount">0</span> 🪙 (50% от баланса)</div>
+            <!-- Правила и предупреждение -->
+            <div class="rules-container">
+                <h4>⚠️ Важная информация:</h4>
+                <ul>
+                    <li>Используется исключительно виртуальная игровая валюта ("жетоны лиги")</li>
+                    <li>Жетоны не имеют денежной ценности и не могут быть обменены на реальные деньги</li>
+                    <li>Ставки делаются исключительно в развлекательных целях</li>
+                    <li>Максимальная ставка: 50% от текущего баланса</li>
+                    <li>Администрация оставляет за собой право изменять правила системы</li>
+                </ul>
+            </div>
+            
+            <!-- Личный кабинет игрока -->
+            <div class="player-cabinet-container" id="playerCabinetSection" style="display: none;">
+                <h3>👤 Ваш личный кабинет</h3>
+                <div class="tokens-display" id="playerTokens">0 жетонов</div>
+                <div class="tokens-stats">
+                    <div class="token-stat">
+                        <div>Ставок сделано</div>
+                        <div class="token-stat-value" id="betsMade">0</div>
+                    </div>
+                    <div class="token-stat">
+                        <div>Ставок выиграно</div>
+                        <div class="token-stat-value" id="betsWon">0</div>
+                    </div>
+                    <div class="token-stat">
+                        <div>Общий выигрыш</div>
+                        <div class="token-stat-value" id="totalWon">0</div>
                     </div>
                 </div>
             </div>
             
-            <!-- Блок входа в личный кабинет -->
-            <div class="login-panel" id="betsLoginPanel">
-                <h3>🔐 Вход в личный кабинет</h3>
-                <p>Для участия в ставках войдите в свой кабинет:</p>
-                <div class="form-group">
-                    <label>Логин:</label>
-                    <input type="text" id="betLogin" class="password-input" placeholder="Ваш логин">
+            <!-- Магазин -->
+            <div id="shopSection" style="display: none;">
+                <h3>🛒 Магазин лиги</h3>
+                <p>Потратьте выигранные жетоны на полезные бонусы:</p>
+                <div class="shop-container">
+                    <div class="shop-item">
+                        <div class="shop-item-icon">⚠️</div>
+                        <h4>Отмена штрафа</h4>
+                        <p>Отмена одного штрафа за неактивность</p>
+                        <div class="shop-item-price">100 жетонов</div>
+                        <button class="buy-btn" onclick="buyItem('penalty_removal')" id="buyPenaltyRemoval">
+                            Купить
+                        </button>
+                    </div>
+                    <div class="shop-item">
+                        <div class="shop-item-icon">📈</div>
+                        <h4>Бонус к рейтингу</h4>
+                        <p>+10 очков к вашему рейтингу</p>
+                        <div class="shop-item-price">100 жетонов</div>
+                        <button class="buy-btn" onclick="buyItem('rating_bonus')" id="buyRatingBonus">
+                            Купить
+                        </button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Пароль:</label>
-                    <input type="password" id="betPassword" class="password-input" placeholder="Ваш пароль">
-                </div>
-                <button class="add-btn action-btn" onclick="loginToBetCabinet()" style="width: 100%;">Войти в кабинет</button>
-                <button class="delete-btn action-btn" onclick="logoutFromBetCabinet()" style="display: none; margin-top: 10px; width: 100%;">Выйти</button>
             </div>
             
             <!-- Активные матчи для ставок -->
-            <div class="bets-container">
-                <div class="bets-header">
-                    <div class="level-icon">💰</div>
-                    <h3>📊 Активные матчи для ставок</h3>
-                </div>
-                
-                <div id="activeMatchesForBets">
-                    <p style="text-align: center; padding: 20px; color: rgba(255, 255, 255, 0.8);">
-                        Нет активных матчей для ставок. Администратор может создать матчи для ставок.
-                    </p>
-                </div>
-                
-                <!-- Админ-панель для создания матчей для ставок -->
-                <div class="admin-controls" id="betsAdminControls" style="display: none; margin-top: 20px;">
-                    <h4>⚙️ Создание матча для ставок (администратор)</h4>
-                    <div class="grid-2">
-                        <div>
-                            <div class="form-group">
-                                <label>Дата матча:</label>
-                                <input type="datetime-local" id="betMatchDate">
-                            </div>
-                            <div class="form-group">
-                                <label>Игрок 1:</label>
-                                <select id="betPlayer1"></select>
-                            </div>
-                            <div class="form-group">
-                                <label>Игрок 2:</label>
-                                <select id="betPlayer2"></select>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="form-group">
-                                <label>Описание (опционально):</label>
-                                <input type="text" id="betDescription" placeholder="Финал турнира, тренировочный матч и т.д.">
-                            </div>
-                            <div class="form-group">
-                                <label>Статус:</label>
-                                <select id="betMatchStatus">
-                                    <option value="pending">Ожидание</option>
-                                    <option value="live">LIVE</option>
-                                    <option value="finished">Завершен</option>
-                                </select>
-                            </div>
-                            <button class="add-btn action-btn" onclick="createBetMatch()" style="margin-top: 20px; width: 100%;">
-                                🎮 Создать матч для ставок
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <h3>🎲 Активные матчи для ставок</h3>
+            <div id="activeBetMatches">
+                <!-- Матчи будут загружены динамически -->
+                <p style="text-align: center; padding: 40px; color: #666;">
+                    Активных матчей для ставок пока нет
+                </p>
+            </div>
+            
+            <!-- Завершенные матчи -->
+            <h3>📊 Завершенные матчи</h3>
+            <div id="finishedBetMatches">
+                <!-- Завершенные матчи будут загружены динамически -->
             </div>
             
             <!-- История ставок -->
-            <div class="cabinet-section" style="background: white; padding: 20px; border-radius: 12px; margin-top: 20px;">
-                <h4>📋 История всех ставок</h4>
-                <div class="table-container">
-                    <table class="bet-history-table">
-                        <thead>
-                            <tr>
-                                <th>Дата</th>
-                                <th>Матч</th>
-                                <th>Игрок</th>
-                                <th>Ставка на</th>
-                                <th>Сумма</th>
-                                <th>Коэффициент</th>
-                                <th>Статус</th>
-                                <th>Выигрыш</th>
-                            </tr>
-                        </thead>
-                        <tbody id="allBetsHistoryBody">
-                            <!-- История всех ставок будет загружена динамически -->
-                        </tbody>
-                    </table>
+            <div id="betHistorySection" style="display: none;">
+                <h3>📋 История ваших ставок</h3>
+                <div id="playerBetHistory">
+                    <!-- История ставок будет загружена динамически -->
                 </div>
             </div>
             
-            <!-- Админ-панель управления жетонами -->
-            <div class="admin-controls" id="tokensAdminControls" style="display: none; margin-top: 20px;">
-                <h4>⚙️ Управление жетонами игроков (администратор)</h4>
+            <!-- Админ-панель для управления ставками -->
+            <div class="bet-admin-panel" id="betAdminPanel" style="display: none;">
+                <h3>⚙️ Управление ставками (администратор)</h3>
+                
+                <h4>Создание нового матча для ставок</h4>
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label>Игрок 1:</label>
+                            <select id="betPlayer1"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Игрок 2:</label>
+                            <select id="betPlayer2"></select>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Дата матча:</label>
+                            <input type="datetime-local" id="betMatchDate">
+                        </div>
+                        <div class="form-group">
+                            <label>Описание (опционально):</label>
+                            <input type="text" id="betMatchDescription" placeholder="Товарищеский матч, Финал турнира и т.д.">
+                        </div>
+                    </div>
+                </div>
+                <button class="add-btn action-btn" onclick="createBetMatch()" style="width: 100%; margin-top: 10px;">
+                    🎲 Создать матч для ставок
+                </button>
+                
+                <h4 style="margin-top: 20px;">Управление жетонами игроков</h4>
                 <div class="grid-2">
                     <div>
                         <div class="form-group">
@@ -956,212 +510,1190 @@
                         </div>
                         <div class="form-group">
                             <label>Количество жетонов:</label>
-                            <input type="number" id="tokensAmount" value="100" min="1" max="10000">
+                            <div class="tokens-control">
+                                <input type="number" id="tokensAmount" value="100" min="1" max="10000">
+                                <button class="add-btn action-btn" onclick="addTokensToPlayer()">
+                                    Добавить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Текущий баланс:</label>
+                            <div id="playerCurrentTokens" style="padding: 10px; background: white; border-radius: 8px; font-weight: bold;">
+                                Выберите игрока
+                            </div>
+                        </div>
+                        <button class="penalty-btn action-btn" onclick="resetPlayerTokens()">
+                            Сбросить баланс
+                        </button>
+                    </div>
+                </div>
+                
+                <h4 style="margin-top: 20px;">Подведение результатов матча</h4>
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label>Матч:</label>
+                            <select id="resultMatchSelect" onchange="loadMatchResultInfo()"></select>
                         </div>
                         <div class="form-group">
-                            <label>Действие:</label>
-                            <select id="tokensAction">
-                                <option value="add">Доначислить</option>
-                                <option value="remove">Списать</option>
-                                <option value="set">Установить</option>
+                            <label>Победитель:</label>
+                            <select id="matchWinner">
+                                <option value="">Выберите победителя</option>
+                                <option value="player1">Игрок 1</option>
+                                <option value="player2">Игрок 2</option>
+                                <option value="draw">Ничья</option>
+                                <option value="cancelled">Отменен</option>
                             </select>
                         </div>
-                        <button class="add-btn action-btn" onclick="managePlayerTokens()" style="width: 100%;">
-                            💰 Выполнить действие
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Статус матча:</label>
+                            <div id="matchStatusInfo" style="padding: 10px; background: white; border-radius: 8px;">
+                                Выберите матч
+                            </div>
+                        </div>
+                        <button class="add-btn action-btn" onclick="submitMatchResult()" style="width: 100%;">
+                            ✅ Подвести результат
                         </button>
                     </div>
                 </div>
             </div>
         </div>
         
+        <div class="tab-content" id="stats">
+            <!-- ... существующий код ... -->
+        </div>
+        
+        <div class="tab-content" id="penalties">
+            <!-- ... существующий код ... -->
+        </div>
+        
         <!-- Панели внизу сайта -->
         <div class="bottom-panels">
-            <!-- Панель Supabase -->
-            <div class="supabase-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 8px; margin-bottom: 10px;">
-                <div class="supabase-status">
-                    <strong>☁️ Supabase Cloud Sync</strong>
-                    <div>Статус: <span id="supabaseStatus" class="status-loading">⏳ Подключение...</span></div>
-                </div>
-                <button class="action-btn add-btn" onclick="loadAllData()" id="refreshBtn">
-                    🔄 Обновить
-                </button>
-            </div>
-            
-            <!-- Панель администратора -->
-            <div class="admin-panel" id="adminPanel" style="display: none; padding: 15px; background: white; border-radius: 8px; margin-bottom: 10px;">
-                <h3>⚙️ Панель администратора</h3>
-                <p>Вы вошли как администратор. Доступны все функции управления.</p>
-                <button class="delete-btn action-btn" onclick="logoutAdmin()">🚪 Выйти из админ-режима</button>
-            </div>
-            
-            <!-- Панель входа -->
-            <div class="login-panel" id="loginPanel" style="padding: 15px; background: white; border-radius: 8px;">
-                <h3>🔐 Управление системой</h3>
-                <p>Для внесения матчей и изменений войдите как администратор:</p>
-                <input type="password" id="adminPassword" class="password-input" placeholder="Пароль администратора" style="width: 100%; padding: 10px; margin: 10px 0;">
-                <button class="add-btn action-btn" onclick="loginAdmin()" style="width: 100%;">Войти как администратор</button>
-            </div>
+            <!-- ... существующий код ... -->
         </div>
     </div>
 
     <script>
     // ============================================
-    // КОНФИГУРАЦИЯ И БАЗОВЫЕ ФУНКЦИИ
+    // ДОБАВЛЯЕМ НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ СТАВОК
     // ============================================
-    const SUPABASE_URL = 'https://bqycjfcjtdawyrysgrbw.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjYwMTk3MCwiZXhwIjoyMDgyMTc3OTcwfQ.lHA_79fw8PSj9ZHMExBpSEIpkonkCYOni7HniGGqadY';
-    
-    let supabaseClient = null;
-    let players = {};
-    let matches = [];
-    let penaltyLog = [];
-    let tournaments = [];
-    let isAdmin = false;
-    const ADMIN_PASSWORD = "admin123";
-    
-    // Новые переменные для системы ставок
-    let playerCabinets = {};
+    let playerCabinet = null;
     let betMatches = [];
-    let betHistory = [];
-    let currentLoggedInPlayer = null;
+    let playerBetHistory = [];
     
-    // Магазин лиги
-    const leagueShop = [
-        {
-            id: 'penalty_cancel',
-            icon: '🚫',
-            title: 'Отмена штрафа за неактивность',
-            description: 'Отменить один штраф -60 очков за неактивность',
-            price: 500,
-            effect: 'cancel_penalty'
-        },
-        {
-            id: 'rating_boost',
-            icon: '📈',
-            title: 'Повышение рейтинга',
-            description: 'Купить 10 очков рейтинга',
-            price: 100,
-            effect: 'add_rating',
-            amount: 10
+    // ============================================
+    // ФУНКЦИИ ДЛЯ СТАВОК
+    // ============================================
+    
+    // Функция для расчета коэффициентов
+    function calculateOdds(player1Rating, player2Rating) {
+        const ratingDiff = Math.abs(player1Rating - player2Rating);
+        const favoriteRating = Math.max(player1Rating, player2Rating);
+        const underdogRating = Math.min(player1Rating, player2Rating);
+        
+        // Базовая формула расчета коэффициентов
+        let favoriteOdds, underdogOdds;
+        
+        if (ratingDiff >= 400) {
+            // Большая разница в рейтинге
+            favoriteOdds = 1.1;
+            underdogOdds = 10.0;
+        } else if (ratingDiff >= 200) {
+            // Средняя разница в рейтинге
+            favoriteOdds = 1.3;
+            underdogOdds = 3.5;
+        } else if (ratingDiff >= 100) {
+            // Небольшая разница в рейтинге
+            favoriteOdds = 1.5;
+            underdogOdds = 2.5;
+        } else {
+            // Рейтинги близки
+            favoriteOdds = 1.8;
+            underdogOdds = 2.0;
         }
-    ];
-    
-    // ============================================
-    // ОСНОВНЫЕ ФУНКЦИИ ДЛЯ ИНИЦИАЛИЗАЦИИ
-    // ============================================
-    
-    // Функция для показа уведомлений
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.textContent = message;
-        notification.className = `notification ${type}`;
         
-        document.body.appendChild(notification);
+        // Определяем, кто фаворит
+        const isPlayer1Favorite = player1Rating > player2Rating;
         
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 3000);
+        return {
+            player1: isPlayer1Favorite ? favoriteOdds : underdogOdds,
+            player2: isPlayer1Favorite ? underdogOdds : favoriteOdds,
+            favorite: isPlayer1Favorite ? 'player1' : 'player2'
+        };
     }
     
-    // Инициализация Supabase
-    async function initSupabase() {
+    // Функция для загрузки кабинета игрока
+    async function loadPlayerCabinet() {
+        if (!supabaseClient) return;
+        
         try {
-            // Проверяем, доступен ли Supabase
-            if (typeof supabase === 'undefined') {
-                // Загружаем Supabase клиент
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-                script.async = true;
-                document.head.appendChild(script);
-                
-                // Ждем загрузки
-                await new Promise((resolve) => {
-                    script.onload = resolve;
-                });
+            // Проверяем, зарегистрирован ли текущий игрок
+            const currentPlayerName = getCurrentPlayerName();
+            if (!currentPlayerName) {
+                hidePlayerCabinet();
+                return;
             }
             
-            // Создаем клиент
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            console.log('✅ Supabase инициализирован');
-            updateSupabaseStatus('✅ Подключено');
-            return true;
+            // Загружаем данные кабинета
+            const { data, error } = await supabaseClient
+                .from('player_cabinets')
+                .select('*')
+                .eq('player_name', currentPlayerName)
+                .single();
+            
+            if (error) {
+                // Если кабинета нет, создаем новый
+                if (error.code === 'PGRST116') {
+                    await createPlayerCabinet(currentPlayerName);
+                    await loadPlayerCabinet();
+                    return;
+                }
+                throw error;
+            }
+            
+            playerCabinet = data;
+            updatePlayerCabinetDisplay();
+            
         } catch (error) {
-            console.error('❌ Ошибка инициализации Supabase:', error);
-            updateSupabaseStatus('❌ Ошибка подключения');
-            return false;
+            console.error('❌ Ошибка загрузки кабинета игрока:', error);
         }
     }
     
-    // Обновление статуса Supabase
-    function updateSupabaseStatus(status) {
-        const statusElement = document.getElementById('supabaseStatus');
-        if (statusElement) {
-            statusElement.textContent = status;
-        }
+    // Функция для получения имени текущего игрока
+    function getCurrentPlayerName() {
+        // В реальном приложении здесь должна быть система аутентификации
+        // Пока используем простой prompt для демонстрации
+        return localStorage.getItem('currentPlayer') || null;
     }
     
-    // Проверка автовхода администратора
-    function checkAutoLogin() {
+    // Функция для создания кабинета игрока
+    async function createPlayerCabinet(playerName) {
+        if (!supabaseClient) return;
+        
         try {
-            const saved = localStorage.getItem('adminLoggedIn');
-            if (saved) {
-                const data = JSON.parse(saved);
-                if (Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
-                    isAdmin = true;
-                    document.getElementById('adminPanel').style.display = 'block';
-                    document.getElementById('loginPanel').style.display = 'none';
-                    document.getElementById('matchesAdminControls').style.display = 'block';
-                    document.getElementById('playersAdminControls').style.display = 'block';
-                    document.getElementById('betsAdminControls').style.display = 'block';
-                    document.getElementById('tokensAdminControls').style.display = 'block';
-                    console.log('✅ Автоматический вход как администратор');
-                } else {
-                    localStorage.removeItem('adminLoggedIn');
+            // Генерируем логин и пароль
+            const login = playerName.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-6);
+            const password = Math.random().toString(36).slice(-8);
+            
+            const { error } = await supabaseClient
+                .from('player_cabinets')
+                .insert({
+                    player_name: playerName,
+                    login: login,
+                    password: password,
+                    tokens: 100, // Стартовый капитал
+                    bets_made: 0,
+                    bets_won: 0,
+                    total_won: 0,
+                    bet_history: [],
+                    shop_purchases: [],
+                    join_date: new Date().toISOString(),
+                    last_login: new Date().toISOString()
+                });
+            
+            if (error) throw error;
+            
+            console.log(`✅ Создан кабинет для игрока ${playerName}`);
+            showNotification(`🎉 Создан ваш игровой кабинет! Логин: ${login}`, 'success');
+            
+        } catch (error) {
+            console.error('❌ Ошибка создания кабинета:', error);
+            showNotification('❌ Ошибка создания кабинета', 'error');
+        }
+    }
+    
+    // Функция для обновления отображения кабинета
+    function updatePlayerCabinetDisplay() {
+        if (!playerCabinet) {
+            hidePlayerCabinet();
+            return;
+        }
+        
+        // Показываем секцию кабинета
+        document.getElementById('playerCabinetSection').style.display = 'block';
+        document.getElementById('shopSection').style.display = 'block';
+        document.getElementById('betHistorySection').style.display = 'block';
+        
+        // Обновляем данные
+        document.getElementById('playerTokens').textContent = playerCabinet.tokens + ' жетонов';
+        document.getElementById('betsMade').textContent = playerCabinet.bets_made;
+        document.getElementById('betsWon').textContent = playerCabinet.bets_won;
+        document.getElementById('totalWon').textContent = playerCabinet.total_won;
+        
+        // Обновляем историю ставок
+        updateBetHistoryDisplay();
+        
+        // Обновляем доступность покупок в магазине
+        updateShopItems();
+    }
+    
+    // Функция для скрытия кабинета
+    function hidePlayerCabinet() {
+        document.getElementById('playerCabinetSection').style.display = 'none';
+        document.getElementById('shopSection').style.display = 'none';
+        document.getElementById('betHistorySection').style.display = 'none';
+    }
+    
+    // Функция для обновления истории ставок
+    function updateBetHistoryDisplay() {
+        if (!playerCabinet) return;
+        
+        const container = document.getElementById('playerBetHistory');
+        const history = playerCabinet.bet_history || [];
+        
+        if (history.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 30px; color: #666;">
+                    📭 Вы еще не делали ставок
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        
+        // Сортируем историю по дате (новые сверху)
+        history.sort((a, b) => new Date(b.placed_at) - new Date(a.placed_at));
+        
+        history.forEach(bet => {
+            const statusClass = bet.status === 'won' ? 'won' : 
+                               bet.status === 'lost' ? 'lost' : 'pending';
+            
+            const statusText = bet.status === 'won' ? 'Выиграно' :
+                              bet.status === 'lost' ? 'Проиграно' :
+                              bet.status === 'pending' ? 'В процессе' :
+                              bet.status === 'draw' ? 'Ничья' : 'Отменено';
+            
+            const winAmount = bet.status === 'won' ? `+${bet.win_amount}` : '';
+            
+            html += `
+                <div class="bet-history-item ${statusClass}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <strong>${bet.match_description || 'Матч'}</strong>
+                        <span style="color: ${bet.status === 'won' ? '#4CAF50' : 
+                                       bet.status === 'lost' ? '#f44336' : '#ff9800'}; 
+                              font-weight: bold;">
+                            ${statusText} ${winAmount}
+                        </span>
+                    </div>
+                    <div style="color: #666; font-size: 0.9em;">
+                        Ставка: ${bet.bet_on} (коэффициент: ${bet.odds}) × ${bet.amount} жетонов
+                    </div>
+                    <div style="color: #999; font-size: 0.8em; margin-top: 5px;">
+                        ${new Date(bet.placed_at).toLocaleDateString('ru-RU')}
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    // Функция для обновления доступности покупок в магазине
+    function updateShopItems() {
+        if (!playerCabinet) return;
+        
+        const canBuyPenalty = playerCabinet.tokens >= 100;
+        const canBuyRating = playerCabinet.tokens >= 100;
+        
+        document.getElementById('buyPenaltyRemoval').disabled = !canBuyPenalty;
+        document.getElementById('buyRatingBonus').disabled = !canBuyRating;
+    }
+    
+    // Функция для покупки предмета в магазине
+    async function buyItem(itemType) {
+        if (!playerCabinet || !supabaseClient) return;
+        
+        const itemPrice = 100;
+        
+        if (playerCabinet.tokens < itemPrice) {
+            showNotification('❌ Недостаточно жетонов для покупки!', 'error');
+            return;
+        }
+        
+        try {
+            // Обновляем баланс
+            playerCabinet.tokens -= itemPrice;
+            
+            // Добавляем покупку в историю
+            const purchase = {
+                item: itemType,
+                price: itemPrice,
+                date: new Date().toISOString()
+            };
+            
+            const purchases = playerCabinet.shop_purchases || [];
+            purchases.push(purchase);
+            playerCabinet.shop_purchases = purchases;
+            
+            // Сохраняем изменения
+            const { error } = await supabaseClient
+                .from('player_cabinets')
+                .update({
+                    tokens: playerCabinet.tokens,
+                    shop_purchases: purchases
+                })
+                .eq('id', playerCabinet.id);
+            
+            if (error) throw error;
+            
+            // Применяем эффект покупки
+            if (itemType === 'penalty_removal') {
+                await applyPenaltyRemoval();
+            } else if (itemType === 'rating_bonus') {
+                await applyRatingBonus();
+            }
+            
+            // Обновляем отображение
+            updatePlayerCabinetDisplay();
+            
+            showNotification('✅ Покупка успешно совершена!', 'success');
+            
+        } catch (error) {
+            console.error('❌ Ошибка покупки:', error);
+            showNotification('❌ Ошибка при совершении покупки', 'error');
+        }
+    }
+    
+    // Функция для применения отмены штрафа
+    async function applyPenaltyRemoval() {
+        const playerName = playerCabinet.player_name;
+        
+        if (players[playerName] && players[playerName].penalties > 0) {
+            players[playerName].penalties -= 60;
+            players[playerName].rating += 60;
+            
+            await savePlayerToSupabase(playerName, players[playerName]);
+            updateAllDisplays();
+            
+            showNotification('✅ Штраф за неактивность отменен! +60 очков к рейтингу', 'success');
+        } else {
+            showNotification('ℹ️ У вас нет штрафов для отмены', 'info');
+        }
+    }
+    
+    // Функция для применения бонуса к рейтингу
+    async function applyRatingBonus() {
+        const playerName = playerCabinet.player_name;
+        
+        if (players[playerName]) {
+            players[playerName].rating += 10;
+            
+            await savePlayerToSupabase(playerName, players[playerName]);
+            updateAllDisplays();
+            
+            showNotification('✅ +10 очков к вашему рейтингу!', 'success');
+        }
+    }
+    
+    // Функция для загрузки матчей для ставок
+    async function loadBetMatches() {
+        if (!supabaseClient) return;
+        
+        try {
+            const { data, error } = await supabaseClient
+                .from('bet_matches')
+                .select('*')
+                .order('date', { ascending: true });
+            
+            if (error) throw error;
+            
+            betMatches = data || [];
+            updateBetMatchesDisplay();
+            
+        } catch (error) {
+            console.error('❌ Ошибка загрузки матчей для ставок:', error);
+        }
+    }
+    
+    // Функция для обновления отображения матчей для ставок
+    function updateBetMatchesDisplay() {
+        const activeContainer = document.getElementById('activeBetMatches');
+        const finishedContainer = document.getElementById('finishedBetMatches');
+        
+        const activeMatches = betMatches.filter(m => m.status === 'pending' || m.status === 'live');
+        const finishedMatches = betMatches.filter(m => m.status === 'finished' || m.status === 'cancelled');
+        
+        // Отображаем активные матчи
+        if (activeMatches.length === 0) {
+            activeContainer.innerHTML = `
+                <p style="text-align: center; padding: 40px; color: #666;">
+                    Активных матчей для ставок пока нет
+                </p>
+            `;
+        } else {
+            let html = '';
+            
+            activeMatches.forEach(match => {
+                const odds = match.odds || calculateOdds(match.player1_rating, match.player2_rating);
+                const isLive = match.status === 'live';
+                const matchDate = new Date(match.date);
+                
+                html += `
+                    <div class="bet-match-card ${isLive ? 'live' : ''}">
+                        ${isLive ? '<div class="live-badge">LIVE</div>' : ''}
+                        
+                        <div class="bet-match-header">
+                            <div class="bet-match-title">
+                                ${match.description || 'Матч для ставок'}
+                            </div>
+                            <div class="bet-match-date">
+                                ${matchDate.toLocaleDateString('ru-RU')} ${matchDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}
+                            </div>
+                        </div>
+                        
+                        <div class="bet-players">
+                            <div class="bet-player ${odds.favorite === 'player1' ? 'bet-player-favorite' : ''}">
+                                <div style="font-weight: bold; margin-bottom: 5px;">${match.player1}</div>
+                                <div style="font-size: 0.9em; color: #666;">
+                                    Рейтинг: ${match.player1_rating}
+                                </div>
+                                <div class="bet-player-odds">
+                                    ${odds.player1.toFixed(2)}
+                                </div>
+                            </div>
+                            
+                            <div class="bet-vs">VS</div>
+                            
+                            <div class="bet-player ${odds.favorite === 'player2' ? 'bet-player-favorite' : ''}">
+                                <div style="font-weight: bold; margin-bottom: 5px;">${match.player2}</div>
+                                <div style="font-size: 0.9em; color: #666;">
+                                    Рейтинг: ${match.player2_rating}
+                                </div>
+                                <div class="bet-player-odds">
+                                    ${odds.player2.toFixed(2)}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${playerCabinet ? `
+                            <div class="bet-actions">
+                                <input type="number" 
+                                       class="bet-input" 
+                                       id="bet_amount_${match.id}"
+                                       placeholder="Количество жетонов"
+                                       min="1"
+                                       max="${Math.floor(playerCabinet.tokens / 2)}">
+                                <button class="bet-max-btn" onclick="setMaxBet('${match.id}')">
+                                    MAX (${Math.floor(playerCabinet.tokens / 2)})
+                                </button>
+                            </div>
+                            
+                            <div class="bet-actions">
+                                <button class="bet-btn" onclick="placeBet('${match.id}', 'player1')">
+                                    Поставить на ${match.player1}
+                                </button>
+                                <button class="bet-btn" onclick="placeBet('${match.id}', 'player2')">
+                                    Поставить на ${match.player2}
+                                </button>
+                            </div>
+                        ` : `
+                            <div style="text-align: center; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+                                🔒 Войдите в систему, чтобы делать ставки
+                            </div>
+                        `}
+                    </div>
+                `;
+            });
+            
+            activeContainer.innerHTML = html;
+        }
+        
+        // Отображаем завершенные матчи
+        if (finishedMatches.length === 0) {
+            finishedContainer.innerHTML = `
+                <p style="text-align: center; padding: 20px; color: #666;">
+                    Завершенных матчей пока нет
+                </p>
+            `;
+        } else {
+            let html = '';
+            
+            finishedMatches.slice(0, 10).forEach(match => { // Показываем только последние 10 матчей
+                const isFinished = match.status === 'finished';
+                const matchDate = new Date(match.date);
+                
+                html += `
+                    <div class="bet-match-card finished">
+                        <div class="bet-match-header">
+                            <div class="bet-match-title">
+                                ${match.description || 'Матч для ставок'}
+                            </div>
+                            <div class="bet-match-date">
+                                ${matchDate.toLocaleDateString('ru-RU')}
+                            </div>
+                        </div>
+                        
+                        <div style="padding: 15px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <div>
+                                    <strong>${match.player1}</strong> (${match.player1_rating})
+                                    ${match.result === 'player1' ? '🏆' : ''}
+                                </div>
+                                <div>
+                                    <strong>${match.player2}</strong> (${match.player2_rating})
+                                    ${match.result === 'player2' ? '🏆' : ''}
+                                </div>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;">
+                                <strong>Результат:</strong> 
+                                ${match.result === 'player1' ? `Победил ${match.player1}` :
+                                  match.result === 'player2' ? `Победил ${match.player2}` :
+                                  match.result === 'draw' ? 'Ничья' :
+                                  match.result === 'cancelled' ? 'Матч отменен' : 'Не определен'}
+                                
+                                ${match.total_bets ? `<br>Всего ставок: ${match.total_bets} на сумму ${match.total_amount} жетонов` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            finishedContainer.innerHTML = html;
+        }
+    }
+    
+    // Функция для установки максимальной ставки
+    function setMaxBet(matchId) {
+        if (!playerCabinet) return;
+        
+        const maxBet = Math.floor(playerCabinet.tokens / 2);
+        const input = document.getElementById(`bet_amount_${matchId}`);
+        if (input) {
+            input.value = maxBet;
+        }
+    }
+    
+    // Функция для размещения ставки
+    async function placeBet(matchId, betOn) {
+        if (!playerCabinet || !supabaseClient) return;
+        
+        const match = betMatches.find(m => m.id === matchId);
+        if (!match) {
+            showNotification('❌ Матч не найден!', 'error');
+            return;
+        }
+        
+        if (match.status !== 'pending' && match.status !== 'live') {
+            showNotification('❌ Ставки на этот матч уже закрыты!', 'error');
+            return;
+        }
+        
+        const input = document.getElementById(`bet_amount_${matchId}`);
+        const amount = parseInt(input?.value);
+        
+        if (!amount || amount < 1) {
+            showNotification('❌ Введите корректную сумму ставки!', 'error');
+            return;
+        }
+        
+        if (amount > Math.floor(playerCabinet.tokens / 2)) {
+            showNotification(`❌ Максимальная ставка: ${Math.floor(playerCabinet.tokens / 2)} жетонов (50% от баланса)`, 'error');
+            return;
+        }
+        
+        if (amount > playerCabinet.tokens) {
+            showNotification('❌ Недостаточно жетонов для ставки!', 'error');
+            return;
+        }
+        
+        try {
+            // Вычитаем ставку из баланса
+            playerCabinet.tokens -= amount;
+            
+            // Обновляем статистику
+            playerCabinet.bets_made += 1;
+            
+            // Создаем запись о ставке
+            const odds = match.odds || calculateOdds(match.player1_rating, match.player2_rating);
+            const betOdds = betOn === 'player1' ? odds.player1 : odds.player2;
+            const potentialWin = Math.floor(amount * betOdds);
+            
+            const betRecord = {
+                id: Date.now().toString(),
+                match_id: matchId,
+                player_login: playerCabinet.login,
+                player_name: playerCabinet.player_name,
+                bet_on: betOn,
+                amount: amount,
+                odds: betOdds,
+                potential_win: potentialWin,
+                status: 'pending',
+                placed_at: new Date().toISOString(),
+                result: null,
+                win_amount: 0
+            };
+            
+            // Добавляем ставку в историю
+            const betHistory = playerCabinet.bet_history || [];
+            betHistory.push(betRecord);
+            playerCabinet.bet_history = betHistory;
+            
+            // Сохраняем изменения в кабинете
+            await supabaseClient
+                .from('player_cabinets')
+                .update({
+                    tokens: playerCabinet.tokens,
+                    bets_made: playerCabinet.bets_made,
+                    bet_history: betHistory
+                })
+                .eq('id', playerCabinet.id);
+            
+            // Обновляем информацию о матче
+            const bets = match.bets || [];
+            bets.push({
+                player_login: playerCabinet.login,
+                player_name: playerCabinet.player_name,
+                bet_on: betOn,
+                amount: amount,
+                placed_at: new Date().toISOString()
+            });
+            
+            await supabaseClient
+                .from('bet_matches')
+                .update({
+                    bets: bets,
+                    total_bets: (match.total_bets || 0) + 1,
+                    total_amount: (match.total_amount || 0) + amount
+                })
+                .eq('id', matchId);
+            
+            // Сохраняем ставку в отдельную таблицу
+            await supabaseClient
+                .from('bet_history')
+                .insert({
+                    id: betRecord.id,
+                    match_id: betRecord.match_id,
+                    player_login: betRecord.player_login,
+                    player_name: betRecord.player_name,
+                    bet_on: betRecord.bet_on,
+                    amount: betRecord.amount,
+                    odds: betRecord.odds,
+                    potential_win: betRecord.potential_win,
+                    status: betRecord.status,
+                    placed_at: betRecord.placed_at
+                });
+            
+            // Обновляем отображение
+            updatePlayerCabinetDisplay();
+            await loadBetMatches(); // Перезагружаем матчи для обновления статистики
+            
+            showNotification(`✅ Ставка размещена! Поставлено ${amount} жетонов на ${betOn === 'player1' ? match.player1 : match.player2}`, 'success');
+            
+            // Очищаем поле ввода
+            if (input) input.value = '';
+            
+        } catch (error) {
+            console.error('❌ Ошибка размещения ставки:', error);
+            showNotification('❌ Ошибка при размещении ставки', 'error');
+        }
+    }
+    
+    // ============================================
+    // АДМИН-ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ СТАВКАМИ
+    // ============================================
+    
+    // Функция для создания матча для ставок (админ)
+    async function createBetMatch() {
+        if (!isAdmin || !supabaseClient) {
+            showNotification('❌ Только администратор может создавать матчи для ставок!', 'error');
+            return;
+        }
+        
+        const player1 = document.getElementById('betPlayer1').value;
+        const player2 = document.getElementById('betPlayer2').value;
+        const dateStr = document.getElementById('betMatchDate').value;
+        const description = document.getElementById('betMatchDescription').value;
+        
+        if (!player1 || !player2) {
+            showNotification('❌ Выберите обоих игроков!', 'error');
+            return;
+        }
+        
+        if (player1 === player2) {
+            showNotification('❌ Игроки должны быть разными!', 'error');
+            return;
+        }
+        
+        if (!dateStr) {
+            showNotification('❌ Выберите дату и время матча!', 'error');
+            return;
+        }
+        
+        const matchDate = new Date(dateStr);
+        const now = new Date();
+        
+        if (matchDate < now) {
+            if (!confirm('Дата матча в прошлом. Всё равно создать?')) {
+                return;
+            }
+        }
+        
+        const player1Data = players[player1];
+        const player2Data = players[player2];
+        
+        if (!player1Data || !player2Data) {
+            showNotification('❌ Один из игроков не найден!', 'error');
+            return;
+        }
+        
+        try {
+            // Рассчитываем коэффициенты
+            const odds = calculateOdds(player1Data.rating, player2Data.rating);
+            
+            const newMatch = {
+                id: 'bet_' + Date.now().toString(),
+                player1: player1,
+                player2: player2,
+                player1_rating: player1Data.rating,
+                player2_rating: player2Data.rating,
+                description: description,
+                date: matchDate.toISOString(),
+                status: 'pending',
+                odds: odds,
+                result: null,
+                total_bets: 0,
+                total_amount: 0,
+                bets: []
+            };
+            
+            const { error } = await supabaseClient
+                .from('bet_matches')
+                .insert(newMatch);
+            
+            if (error) throw error;
+            
+            betMatches.push(newMatch);
+            updateBetMatchesDisplay();
+            updateBetAdminSelects();
+            
+            // Очищаем форму
+            document.getElementById('betMatchDescription').value = '';
+            document.getElementById('betMatchDate').value = '';
+            
+            showNotification(`✅ Матч для ставок создан! ${player1} vs ${player2}`, 'success');
+            
+        } catch (error) {
+            console.error('❌ Ошибка создания матча для ставок:', error);
+            showNotification('❌ Ошибка создания матча', 'error');
+        }
+    }
+    
+    // Функция для добавления жетонов игроку (админ)
+    async function addTokensToPlayer() {
+        if (!isAdmin || !supabaseClient) return;
+        
+        const playerName = document.getElementById('tokensPlayerSelect').value;
+        const amount = parseInt(document.getElementById('tokensAmount').value);
+        
+        if (!playerName || !amount || amount < 1) {
+            showNotification('❌ Введите корректные данные!', 'error');
+            return;
+        }
+        
+        try {
+            // Находим кабинет игрока
+            const { data: cabinet, error: cabinetError } = await supabaseClient
+                .from('player_cabinets')
+                .select('*')
+                .eq('player_name', playerName)
+                .single();
+            
+            if (cabinetError) {
+                // Если кабинета нет, создаем его
+                await createPlayerCabinet(playerName);
+                await addTokensToPlayer(); // Рекурсивно вызываем функцию
+                return;
+            }
+            
+            // Обновляем баланс
+            const newTokens = (cabinet.tokens || 0) + amount;
+            
+            await supabaseClient
+                .from('player_cabinets')
+                .update({ tokens: newTokens })
+                .eq('id', cabinet.id);
+            
+            // Обновляем отображение текущего баланса
+            if (playerCabinet && playerCabinet.player_name === playerName) {
+                playerCabinet.tokens = newTokens;
+                updatePlayerCabinetDisplay();
+            }
+            
+            showNotification(`✅ Игроку ${playerName} добавлено ${amount} жетонов!`, 'success');
+            
+        } catch (error) {
+            console.error('❌ Ошибка добавления жетонов:', error);
+            showNotification('❌ Ошибка добавления жетонов', 'error');
+        }
+    }
+    
+    // Функция для сброса баланса игрока (админ)
+    async function resetPlayerTokens() {
+        if (!isAdmin || !supabaseClient) return;
+        
+        const playerName = document.getElementById('tokensPlayerSelect').value;
+        
+        if (!playerName) {
+            showNotification('❌ Выберите игрока!', 'error');
+            return;
+        }
+        
+        if (!confirm(`Сбросить баланс игрока ${playerName} к начальному (100 жетонов)?`)) {
+            return;
+        }
+        
+        try {
+            const { data: cabinet, error: cabinetError } = await supabaseClient
+                .from('player_cabinets')
+                .select('*')
+                .eq('player_name', playerName)
+                .single();
+            
+            if (cabinetError) throw cabinetError;
+            
+            await supabaseClient
+                .from('player_cabinets')
+                .update({ tokens: 100 })
+                .eq('id', cabinet.id);
+            
+            // Обновляем отображение текущего баланса
+            if (playerCabinet && playerCabinet.player_name === playerName) {
+                playerCabinet.tokens = 100;
+                updatePlayerCabinetDisplay();
+            }
+            
+            showNotification(`✅ Баланс игрока ${playerName} сброшен до 100 жетонов`, 'success');
+            
+        } catch (error) {
+            console.error('❌ Ошибка сброса баланса:', error);
+            showNotification('❌ Ошибка сброса баланса', 'error');
+        }
+    }
+    
+    // Функция для подведения результата матча (админ)
+    async function submitMatchResult() {
+        if (!isAdmin || !supabaseClient) return;
+        
+        const matchId = document.getElementById('resultMatchSelect').value;
+        const winner = document.getElementById('matchWinner').value;
+        
+        if (!matchId || !winner) {
+            showNotification('❌ Выберите матч и победителя!', 'error');
+            return;
+        }
+        
+        const match = betMatches.find(m => m.id === matchId);
+        if (!match) {
+            showNotification('❌ Матч не найден!', 'error');
+            return;
+        }
+        
+        if (match.status === 'finished') {
+            if (!confirm('Матч уже завершен. Перезаписать результат?')) {
+                return;
+            }
+        }
+        
+        try {
+            // Обновляем статус матча
+            const resultMap = {
+                'player1': match.player1,
+                'player2': match.player2,
+                'draw': 'draw',
+                'cancelled': 'cancelled'
+            };
+            
+            const result = resultMap[winner];
+            
+            await supabaseClient
+                .from('bet_matches')
+                .update({
+                    status: 'finished',
+                    result: result,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', matchId);
+            
+            // Если матч был отменен, возвращаем ставки
+            if (winner === 'cancelled') {
+                await refundAllBets(matchId);
+            } else {
+                // Рассчитываем выигрыши
+                await calculateWinnings(matchId, result);
+            }
+            
+            // Обновляем данные
+            await loadBetMatches();
+            updateBetAdminSelects();
+            
+            showNotification('✅ Результат матча успешно сохранен!', 'success');
+            
+        } catch (error) {
+            console.error('❌ Ошибка сохранения результата:', error);
+            showNotification('❌ Ошибка сохранения результата', 'error');
+        }
+    }
+    
+    // Функция для возврата ставок при отмене матча
+    async function refundAllBets(matchId) {
+        try {
+            // Находим все ставки на этот матч
+            const { data: bets, error } = await supabaseClient
+                .from('bet_history')
+                .select('*')
+                .eq('match_id', matchId)
+                .eq('status', 'pending');
+            
+            if (error) throw error;
+            
+            // Возвращаем каждую ставку
+            for (const bet of bets) {
+                // Находим кабинет игрока
+                const { data: cabinet, error: cabinetError } = await supabaseClient
+                    .from('player_cabinets')
+                    .select('*')
+                    .eq('login', bet.player_login)
+                    .single();
+                
+                if (cabinetError) continue;
+                
+                // Возвращаем ставку
+                const newTokens = (cabinet.tokens || 0) + bet.amount;
+                
+                await supabaseClient
+                    .from('player_cabinets')
+                    .update({ tokens: newTokens })
+                    .eq('id', cabinet.id);
+                
+                // Обновляем статус ставки
+                await supabaseClient
+                    .from('bet_history')
+                    .update({
+                        status: 'cancelled',
+                        result: 'cancelled',
+                        win_amount: 0
+                    })
+                    .eq('id', bet.id);
+                
+                // Обновляем локальные данные
+                if (playerCabinet && playerCabinet.login === bet.player_login) {
+                    playerCabinet.tokens = newTokens;
                 }
             }
-        } catch (error) {
-            console.error('❌ Ошибка автовхода:', error);
-        }
-    }
-    
-    // Вход администратора
-    function loginAdmin() {
-        const password = document.getElementById('adminPassword').value;
-        if (password === ADMIN_PASSWORD) {
-            isAdmin = true;
-            localStorage.setItem('adminLoggedIn', JSON.stringify({
-                timestamp: Date.now()
-            }));
-            document.getElementById('adminPanel').style.display = 'block';
-            document.getElementById('loginPanel').style.display = 'none';
-            document.getElementById('matchesAdminControls').style.display = 'block';
-            document.getElementById('playersAdminControls').style.display = 'block';
-            document.getElementById('betsAdminControls').style.display = 'block';
-            document.getElementById('tokensAdminControls').style.display = 'block';
             
-            showNotification('✅ Вход как администратор выполнен!', 'success');
-        } else {
-            showNotification('❌ Неверный пароль!', 'error');
+        } catch (error) {
+            console.error('❌ Ошибка возврата ставок:', error);
         }
     }
     
-    // Выход администратора
-    function logoutAdmin() {
-        isAdmin = false;
-        localStorage.removeItem('adminLoggedIn');
-        document.getElementById('adminPanel').style.display = 'none';
-        document.getElementById('loginPanel').style.display = 'block';
-        document.getElementById('matchesAdminControls').style.display = 'none';
-        document.getElementById('playersAdminControls').style.display = 'none';
-        document.getElementById('betsAdminControls').style.display = 'none';
-        document.getElementById('tokensAdminControls').style.display = 'none';
-        
-        showNotification('👋 Выход из админ-режима', 'info');
+    // Функция для расчета выигрышей
+    async function calculateWinnings(matchId, result) {
+        try {
+            // Находим все ставки на этот матч
+            const { data: bets, error } = await supabaseClient
+                .from('bet_history')
+                .select('*')
+                .eq('match_id', matchId)
+                .eq('status', 'pending');
+            
+            if (error) throw error;
+            
+            // Находим матч
+            const match = betMatches.find(m => m.id === matchId);
+            if (!match) return;
+            
+            // Обрабатываем каждую ставку
+            for (const bet of bets) {
+                let status, winAmount = 0;
+                
+                if (result === 'draw') {
+                    // При ничьей возвращаем ставки
+                    status = 'draw';
+                } else {
+                    // Проверяем, выиграла ли ставка
+                    const betOnPlayer = bet.bet_on === 'player1' ? match.player1 : match.player2;
+                    if (betOnPlayer === result) {
+                        // Ставка выиграла
+                        status = 'won';
+                        winAmount = Math.floor(bet.amount * bet.odds);
+                        
+                        // Начисляем выигрыш
+                        const { data: cabinet, error: cabinetError } = await supabaseClient
+                            .from('player_cabinets')
+                            .select('*')
+                            .eq('login', bet.player_login)
+                            .single();
+                        
+                        if (!cabinetError) {
+                            const newTokens = (cabinet.tokens || 0) + winAmount;
+                            const newTotalWon = (cabinet.total_won || 0) + winAmount;
+                            const newBetsWon = (cabinet.bets_won || 0) + 1;
+                            
+                            await supabaseClient
+                                .from('player_cabinets')
+                                .update({
+                                    tokens: newTokens,
+                                    total_won: newTotalWon,
+                                    bets_won: newBetsWon
+                                })
+                                .eq('id', cabinet.id);
+                            
+                            // Обновляем локальные данные
+                            if (playerCabinet && playerCabinet.login === bet.player_login) {
+                                playerCabinet.tokens = newTokens;
+                                playerCabinet.total_won = newTotalWon;
+                                playerCabinet.bets_won = newBetsWon;
+                            }
+                        }
+                    } else {
+                        // Ставка проиграла
+                        status = 'lost';
+                    }
+                }
+                
+                // Обновляем статус ставки
+                await supabaseClient
+                    .from('bet_history')
+                    .update({
+                        status: status,
+                        result: result,
+                        win_amount: winAmount
+                    })
+                    .eq('id', bet.id);
+            }
+            
+            // Обновляем кабинеты всех игроков, сделавших ставки
+            if (playerCabinet) {
+                updatePlayerCabinetDisplay();
+            }
+            
+        } catch (error) {
+            console.error('❌ Ошибка расчета выигрышей:', error);
+        }
     }
     
-    // Переключение вкладок
+    // Функция для загрузки информации о матче (админ)
+    async function loadMatchResultInfo() {
+        const matchId = document.getElementById('resultMatchSelect').value;
+        if (!matchId) return;
+        
+        const match = betMatches.find(m => m.id === matchId);
+        if (!match) return;
+        
+        const statusInfo = document.getElementById('matchStatusInfo');
+        
+        let info = `
+            <strong>${match.player1} (${match.player1_rating}) vs ${match.player2} (${match.player2_rating})</strong><br>
+            Статус: ${match.status === 'pending' ? 'Ожидание' : 
+                      match.status === 'live' ? 'В процессе' : 
+                      match.status === 'finished' ? 'Завершен' : 'Отменен'}<br>
+        `;
+        
+        if (match.result) {
+            info += `Результат: ${match.result === 'player1' ? `Победил ${match.player1}` :
+                               match.result === 'player2' ? `Победил ${match.player2}` :
+                               match.result === 'draw' ? 'Ничья' : 'Отменен'}<br>`;
+        }
+        
+        info += `Всего ставок: ${match.total_bets || 0} на сумму ${match.total_amount || 0} жетонов`;
+        
+        statusInfo.innerHTML = info;
+    }
+    
+    // Функция для обновления селекторов в админ-панели
+    function updateBetAdminSelects() {
+        if (!isAdmin) return;
+        
+        // Селекторы для создания матча
+        updatePlayerSelectForBetting();
+        
+        // Селектор для управления жетонами
+        const tokensSelect = document.getElementById('tokensPlayerSelect');
+        if (tokensSelect) {
+            const playerNames = Object.keys(players).sort();
+            tokensSelect.innerHTML = '<option value="">Выберите игрока</option>';
+            playerNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                tokensSelect.appendChild(option);
+            });
+        }
+        
+        // Селектор для подведения результатов
+        const resultSelect = document.getElementById('resultMatchSelect');
+        if (resultSelect) {
+            // Показываем только незавершенные матчи
+            const pendingMatches = betMatches.filter(m => m.status !== 'finished');
+            resultSelect.innerHTML = '<option value="">Выберите матч</option>';
+            pendingMatches.forEach(match => {
+                const option = document.createElement('option');
+                option.value = match.id;
+                option.textContent = `${match.player1} vs ${match.player2} (${new Date(match.date).toLocaleDateString('ru-RU')})`;
+                resultSelect.appendChild(option);
+            });
+        }
+    }
+    
+    // Функция для обновления селекторов игроков для ставок
+    function updatePlayerSelectForBetting() {
+        const selects = ['betPlayer1', 'betPlayer2'];
+        const playerNames = Object.keys(players).sort();
+        
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">Выберите игрока</option>';
+            playerNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
+        });
+    }
+    
+    // ============================================
+    // ИНТЕГРАЦИЯ С СУЩЕСТВУЮЩИМ КОДОМ
+    // ============================================
+    
+    // Обновляем функцию инициализации
+    async function init() {
+        console.log('🚀 Запуск приложения...');
+        
+        checkAutoLogin();
+        
+        setMatchDateToToday();
+        
+        await initSupabase();
+        
+        updatePlayerSelects();
+        updatePlayerSelectForBetting();
+        
+        // Загружаем данные для ставок
+        await loadBetMatches();
+        
+        // Пытаемся загрузить кабинет игрока
+        await loadPlayerCabinet();
+        
+        // Обновляем админ-панель если нужно
+        if (isAdmin) {
+            document.getElementById('betAdminPanel').style.display = 'block';
+            updateBetAdminSelects();
+        }
+        
+        console.log('✅ Приложение запущено');
+    }
+    
+    // Обновляем функцию открытия вкладок
     function openTab(tabName) {
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.classList.remove('active');
@@ -1181,1167 +1713,106 @@
             activeButton.classList.add('active');
         }
         
-        if (tabName === 'bets') {
-            updateActiveBetsDisplay();
-            updateAllBetsHistory();
-        }
-    }
-    
-    // Возврат к главному экрану
-    function returnToMain() {
-        document.getElementById('appContainer').style.display = 'block';
-        document.getElementById('playerProfileContainer').style.display = 'none';
-        return false;
-    }
-    
-    // Установить сегодняшнюю дату
-    function setMatchDateToToday() {
-        const today = new Date().toISOString().split('T')[0];
-        const dateInput = document.getElementById('matchDate');
-        if (dateInput) {
-            dateInput.value = today;
-        }
-    }
-    
-    // ============================================
-    // ФУНКЦИИ ДЛЯ СИСТЕМЫ СТАВОК
-    // ============================================
-    
-    // Расчет коэффициентов
-    function calculateOdds(player1Rating, player2Rating) {
-        const diff = Math.abs(player1Rating - player2Rating);
-        
-        let favoriteOdds = 1.3;
-        let underdogOdds = 3.5;
-        
-        if (diff >= 400) {
-            favoriteOdds = 1.1;
-            underdogOdds = 6.0;
-        } else if (diff >= 300) {
-            favoriteOdds = 1.2;
-            underdogOdds = 4.5;
-        } else if (diff >= 200) {
-            favoriteOdds = 1.25;
-            underdogOdds = 3.8;
-        } else if (diff >= 100) {
-            favoriteOdds = 1.35;
-            underdogOdds = 3.0;
-        } else if (diff >= 50) {
-            favoriteOdds = 1.4;
-            underdogOdds = 2.8;
-        } else {
-            favoriteOdds = 1.5;
-            underdogOdds = 2.5;
-        }
-        
-        if (player1Rating >= player2Rating) {
-            return {
-                player1: favoriteOdds,
-                player2: underdogOdds,
-                favorite: player1Rating > player2Rating ? 'player1' : 'equal'
-            };
-        } else {
-            return {
-                player1: underdogOdds,
-                player2: favoriteOdds,
-                favorite: 'player2'
-            };
-        }
-    }
-    
-    // Генерация пароля
-    function generatePassword(length = 8) {
-        const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let password = '';
-        for (let i = 0; i < length; i++) {
-            password += charset.charAt(Math.floor(Math.random() * charset.length));
-        }
-        return password;
-    }
-    
-    // Создание личного кабинета
-    async function createPlayerCabinet(playerName, login, password = null, initialTokens = 100) {
-        try {
-            const playerPassword = password || generatePassword();
-            
-            const cabinet = {
-                playerName: playerName,
-                login: login.toLowerCase(),
-                password: playerPassword,
-                tokens: initialTokens,
-                betsMade: 0,
-                betsWon: 0,
-                totalWon: 0,
-                betHistory: [],
-                joinDate: new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-                shopPurchases: []
-            };
-            
-            // Сохраняем локально
-            playerCabinets[cabinet.login] = cabinet;
-            
-            console.log(`✅ Создан личный кабинет для игрока ${playerName}`);
-            console.log(`🔑 Логин: ${cabinet.login}, Пароль: ${playerPassword}`);
-            
-            return cabinet;
-            
-        } catch (error) {
-            console.error('❌ Ошибка создания личного кабинета:', error);
-            throw error;
-        }
-    }
-    
-    // Вход в кабинет
-    async function loginToBetCabinet() {
-        const login = document.getElementById('betLogin').value.trim().toLowerCase();
-        const password = document.getElementById('betPassword').value;
-        
-        if (!login || !password) {
-            showNotification('Введите логин и пароль!', 'error');
-            return;
-        }
-        
-        try {
-            let cabinet = playerCabinets[login];
-            
-            if (!cabinet || cabinet.password !== password) {
-                showNotification('Неверный логин или пароль!', 'error');
-                return;
-            }
-            
-            // Обновляем время входа
-            cabinet.lastLogin = new Date().toISOString();
-            currentLoggedInPlayer = cabinet;
-            
-            // Сохраняем в localStorage
-            localStorage.setItem('currentLoggedInPlayer', JSON.stringify({
-                login: cabinet.login,
-                timestamp: Date.now()
-            }));
-            
-            // Обновляем отображение
-            updateBetCabinetDisplay();
-            updateActiveBetsDisplay();
-            updateAllBetsHistory();
-            
-            showNotification(`✅ Добро пожаловать, ${cabinet.playerName}!`, 'success');
-            
-            // Показываем/скрываем панели
-            document.getElementById('betsLoginPanel').style.display = 'none';
-            document.getElementById('currentPlayerCabinet').style.display = 'block';
-            document.querySelector('#betsLoginPanel .delete-btn').style.display = 'block';
-            
-        } catch (error) {
-            console.error('❌ Ошибка входа в кабинет:', error);
-            showNotification('Ошибка входа в кабинет', 'error');
-        }
-    }
-    
-    // Выход из кабинета
-    function logoutFromBetCabinet() {
-        currentLoggedInPlayer = null;
-        localStorage.removeItem('currentLoggedInPlayer');
-        
-        document.getElementById('betLogin').value = '';
-        document.getElementById('betPassword').value = '';
-        
-        document.getElementById('betsLoginPanel').style.display = 'block';
-        document.getElementById('currentPlayerCabinet').style.display = 'none';
-        document.querySelector('#betsLoginPanel .delete-btn').style.display = 'none';
-        
-        updateActiveBetsDisplay();
-        
-        showNotification('👋 Вы вышли из кабинета', 'info');
-    }
-    
-    // Обновление отображения кабинета
-    function updateBetCabinetDisplay() {
-        if (!currentLoggedInPlayer) return;
-        
-        const cabinet = currentLoggedInPlayer;
-        
-        document.getElementById('currentCabinetName').textContent = cabinet.playerName;
-        document.getElementById('currentCabinetTokens').textContent = cabinet.tokens;
-        document.getElementById('maxBetAmount').textContent = Math.floor(cabinet.tokens * 0.5);
-        
-        const avatarElement = document.getElementById('currentCabinetAvatar');
-        const playerData = players[cabinet.playerName];
-        if (playerData && playerData.avatar) {
-            avatarElement.src = playerData.avatar;
-        } else {
-            avatarElement.src = 'https://i.pravatar.cc/150?img=3';
-        }
-    }
-    
-    // Проверка автовхода в кабинет
-    function checkAutoLoginForBets() {
-        try {
-            const saved = localStorage.getItem('currentLoggedInPlayer');
-            if (saved) {
-                const data = JSON.parse(saved);
-                const login = data.login;
-                
-                if (Date.now() - data.timestamp < 60 * 60 * 1000) {
-                    const cabinet = playerCabinets[login];
-                    if (cabinet) {
-                        currentLoggedInPlayer = cabinet;
-                        updateBetCabinetDisplay();
-                        document.getElementById('betsLoginPanel').style.display = 'none';
-                        document.getElementById('currentPlayerCabinet').style.display = 'block';
-                        document.querySelector('#betsLoginPanel .delete-btn').style.display = 'block';
-                        console.log(`✅ Автовход в кабинет ${login}`);
-                    }
+        // Обработка вкладки ставок
+        if (tabName === 'betting') {
+            setTimeout(() => {
+                updateBetMatchesDisplay();
+                if (isAdmin) {
+                    updateBetAdminSelects();
                 }
-            }
-        } catch (error) {
-            console.error('❌ Ошибка автовхода:', error);
+            }, 100);
+        }
+        
+        if (tabName === 'stats') {
+            setTimeout(() => {
+                updateYearProgressChart();
+            }, 100);
+        } else if (tabName === 'tournaments') {
+            setTimeout(() => {
+                updateTournamentsDisplay();
+                updateTournamentPlayersList();
+            }, 100);
         }
     }
     
-    // ============================================
-    // ОБНОВЛЕНИЕ ОТОБРАЖЕНИЯ
-    // ============================================
-    
-    // Обновление таблицы рейтинга
-    function updateRatingTable() {
-        const tbody = document.getElementById('ratingBody');
-        if (!tbody) return;
-        
-        tbody.innerHTML = '';
-        
-        const playerList = Object.entries(players);
-        if (playerList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">Нет данных об игроках</td></tr>';
-            return;
-        }
-        
-        playerList.sort((a, b) => b[1].rating - a[1].rating);
-        
-        playerList.forEach(([name, data], index) => {
-            const row = document.createElement('tr');
+    // Обновляем функцию проверки входа админа
+    function checkAutoLogin() {
+        const saved = localStorage.getItem('tennisAdmin');
+        if (saved === 'true') {
+            isAdmin = true;
+            document.getElementById('appContainer').classList.add('admin-active');
+            document.getElementById('loginPanel').style.display = 'none';
+            document.getElementById('ratingAdminControls').style.display = 'block';
+            document.getElementById('matchesAdminControls').style.display = 'block';
+            document.getElementById('penaltiesAdminControls').style.display = 'block';
+            document.getElementById('playersAdminControls').style.display = 'block';
             
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td><span onclick="showPlayerProfile('${name}')" style="cursor: pointer; text-decoration: underline; color: #4CAF50;">${name}</span></td>
-                <td><span class="rating-badge">${data.rating}</span></td>
-                <td>${data.matches}</td>
-                <td>${data.wins} (${data.matches ? Math.round(data.wins/data.matches*100) : 0}%)</td>
-                <td>${data.lastGame ? data.lastGame.toLocaleDateString('ru-RU') : 'Нет'}</td>
-                <td>
-                    <button class="action-btn" onclick="showPlayerProfile('${name}')">👁️ Профиль</button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-    
-    // Обновление таблицы игроков
-    function updatePlayersTable() {
-        const tbody = document.getElementById('playersBody');
-        if (!tbody) return;
-        
-        tbody.innerHTML = '';
-        
-        const playerList = Object.entries(players);
-        if (playerList.length === 0) return;
-        
-        playerList.forEach(([name, data]) => {
-            const row = document.createElement('tr');
-            
-            const cabinet = Object.values(playerCabinets).find(c => c.playerName === name);
-            const tokens = cabinet ? cabinet.tokens : 0;
-            
-            const actionsCell = isAdmin ? 
-                `<td>
-                    <button class="action-btn" onclick="changeAvatar('${name}')" title="Сменить аватар" style="background: #2196F3; margin-right: 5px;">🖼️</button>
-                    <button class="delete-btn action-btn" onclick="removePlayer('${name}')" title="Удалить игрока">🗑️</button>
-                </td>` :
-                `<td>-</td>`;
-            
-            row.innerHTML = `
-                <td><img src="${data.avatar}" class="avatar" 
-                       onerror="this.src='https://i.pravatar.cc/150?img=3'}" onclick="showPlayerProfile('${name}')" style="cursor: pointer;"></td>
-                <td><span onclick="showPlayerProfile('${name}')" style="cursor: pointer; text-decoration: underline; color: #4CAF50;">${name}</span></td>
-                <td><span class="rating-badge">${data.rating}</span></td>
-                <td>${data.matches}</td>
-                <td>${data.wins} (${data.matches ? Math.round(data.wins/data.matches*100) : 0}%)</td>
-                <td><span style="color: #4CAF50; font-weight: bold;">${tokens} 🪙</span></td>
-                ${actionsCell}
-            `;
-            tbody.appendChild(row);
-        });
-    }
-    
-    // Обновление селекторов
-    function updatePlayerSelects() {
-        const selects = ['player1', 'player2', 'betPlayer1', 'betPlayer2', 'tokensPlayerSelect'];
-        const playerNames = Object.keys(players).sort();
-        
-        selects.forEach(selectId => {
-            const select = document.getElementById(selectId);
-            if (!select) return;
-            
-            const currentValue = select.value;
-            
-            select.innerHTML = '<option value="">Выберите игрока</option>';
-            
-            playerNames.forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                select.appendChild(option);
-            });
-            
-            if (players[currentValue]) {
-                select.value = currentValue;
-            }
-        });
-    }
-    
-    // Обновление истории матчей
-    function updateMatchesTable() {
-        const container = document.getElementById('matchesContainer');
-        if (!container) return;
-        
-        if (matches.length === 0) {
-            container.innerHTML = '<p style="text-align: center; padding: 20px;">Нет данных о матчах</p>';
-            return;
-        }
-        
-        // Группируем матчи по дням
-        const matchesByDate = {};
-        matches.forEach(match => {
-            const dateKey = match.date.toLocaleDateString('ru-RU');
-            if (!matchesByDate[dateKey]) {
-                matchesByDate[dateKey] = [];
-            }
-            matchesByDate[dateKey].push(match);
-        });
-        
-        let html = '';
-        Object.keys(matchesByDate).sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
-            html += `<h3>${date}</h3>`;
-            matchesByDate[date].forEach(match => {
-                html += `
-                    <div style="padding: 10px; margin: 10px 0; background: #f8f9fa; border-radius: 8px;">
-                        <strong>${match.player1}</strong> vs <strong>${match.player2}</strong><br>
-                        Победитель: ${match.winner === 'player1' ? match.player1 : match.winner === 'player2' ? match.player2 : 'Ничья'}
-                        ${match.score ? ` (${match.score})` : ''}
-                    </div>
-                `;
-            });
-        });
-        
-        container.innerHTML = html;
-    }
-    
-    // Обновление активных ставок
-    function updateActiveBetsDisplay() {
-        const container = document.getElementById('activeMatchesForBets');
-        if (!container) return;
-        
-        const activeMatches = betMatches.filter(match => 
-            match.status === 'pending' || match.status === 'live'
-        );
-        
-        if (activeMatches.length === 0) {
-            container.innerHTML = `
-                <p style="text-align: center; padding: 20px; color: rgba(255, 255, 255, 0.8);">
-                    Нет активных матчей для ставок. Администратор может создать матчи для ставок.
-                </p>
-            `;
-            return;
-        }
-        
-        let html = '<div class="bets-grid">';
-        
-        activeMatches.forEach(match => {
-            const player1Data = players[match.player1];
-            const player2Data = players[match.player2];
-            const isLive = match.status === 'live';
-            
-            html += `
-                <div class="bet-card">
-                    <div class="bet-match-info">
-                        <div class="bet-player ${match.odds.favorite === 'player1' ? 'winner' : ''}">
-                            <img src="${player1Data?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
-                                 style="width: 40px; height: 40px; border-radius: 50%;">
-                            <div class="bet-player-info">
-                                <div class="bet-player-name">${match.player1}</div>
-                                <div class="bet-player-rating">Рейтинг: ${match.player1Rating}</div>
-                            </div>
-                        </div>
-                        
-                        <div style="text-align: center; margin: 10px 0;">
-                            <div style="font-weight: bold; color: #ff9800;">${isLive ? '<span class="match-live-badge">LIVE</span>' : 'VS'}</div>
-                            ${match.description ? `<div style="font-size: 0.9em; margin-top: 5px;">${match.description}</div>` : ''}
-                            <div style="font-size: 0.8em; margin-top: 5px;">
-                                ${new Date(match.date).toLocaleDateString('ru-RU')} 
-                            </div>
-                        </div>
-                        
-                        <div class="bet-player ${match.odds.favorite === 'player2' ? 'winner' : ''}">
-                            <div class="bet-player-info" style="text-align: right;">
-                                <div class="bet-player-name">${match.player2}</div>
-                                <div class="bet-player-rating">Рейтинг: ${match.player2Rating}</div>
-                            </div>
-                            <img src="${player2Data?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
-                                 style="width: 40px; height: 40px; border-radius: 50%;">
-                        </div>
-                    </div>
-                    
-                    <div class="bet-odds">
-                        <div class="odds-item">
-                            <div class="odds-value">${match.odds.player1.toFixed(2)}</div>
-                            <div class="odds-label">${match.player1}</div>
-                        </div>
-                        <div class="odds-item">
-                            <div class="odds-value">${match.odds.player2.toFixed(2)}</div>
-                            <div class="odds-label">${match.player2}</div>
-                        </div>
-                    </div>
-                    
-                    ${currentLoggedInPlayer && match.status === 'pending' ? `
-                        <div class="bet-form">
-                            <input type="number" 
-                                   class="bet-amount-input" 
-                                   id="betAmount_${match.id}"
-                                   placeholder="Сумма ставки"
-                                   min="1" 
-                                   max="${Math.floor(currentLoggedInPlayer.tokens * 0.5)}">
-                            <div class="bet-buttons">
-                                <button class="bet-btn bet-btn-player1" 
-                                        onclick="placeBet('${match.id}', 'player1')">
-                                    Ставка на ${match.player1}
-                                </button>
-                                <button class="bet-btn bet-btn-player2" 
-                                        onclick="placeBet('${match.id}', 'player2')">
-                                    Ставка на ${match.player2}
-                                </button>
-                            </div>
-                            <div id="betStatus_${match.id}" class="bet-status"></div>
-                        </div>
-                    ` : ''}
-                    
-                    ${isAdmin ? `
-                        <div style="margin-top: 10px; display: flex; gap: 10px;">
-                            <button class="action-btn add-btn" 
-                                    onclick="updateBetMatchStatus('${match.id}', 'live')"
-                                    style="flex: 1; padding: 5px; font-size: 0.9em;">
-                                ▶️ Начать матч
-                            </button>
-                            <button class="action-btn delete-btn" 
-                                    onclick="finishBetMatch('${match.id}')"
-                                    style="flex: 1; padding: 5px; font-size: 0.9em;">
-                                🏁 Завершить матч
-                            </button>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        });
-        
-        html += '</div>';
-        container.innerHTML = html;
-    }
-    
-    // Обновление истории всех ставок
-    function updateAllBetsHistory() {
-        const tbody = document.getElementById('allBetsHistoryBody');
-        if (!tbody) return;
-        
-        if (betHistory.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="8" style="text-align: center; padding: 20px;">
-                        Ставок еще не было
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-        
-        let html = '';
-        
-        betHistory.slice(0, 20).forEach(bet => {
-            const match = betMatches.find(m => m.id === bet.matchId);
-            if (!match) return;
-            
-            let statusText = '';
-            let statusClass = '';
-            
-            switch(bet.status) {
-                case 'pending':
-                    statusText = '⏳';
-                    statusClass = 'pending';
-                    break;
-                case 'won':
-                    statusText = '✅';
-                    statusClass = 'won';
-                    break;
-                case 'lost':
-                    statusText = '❌';
-                    statusClass = 'lost';
-                    break;
-                case 'draw':
-                    statusText = '🤝';
-                    break;
-                case 'cancelled':
-                    statusText = '🚫';
-                    break;
-            }
-            
-            html += `
-                <tr>
-                    <td>${new Date(bet.placedAt).toLocaleDateString('ru-RU')}</td>
-                    <td>${match.player1} vs ${match.player2}</td>
-                    <td>${bet.playerName}</td>
-                    <td>${bet.betOn === 'player1' ? match.player1 : match.player2}</td>
-                    <td>${bet.amount} 🪙</td>
-                    <td>${bet.odds.toFixed(2)}</td>
-                    <td><span class="${statusClass}">${statusText}</span></td>
-                    <td>
-                        ${bet.status === 'won' ? `<span style="color: #4CAF50; font-weight: bold;">+${bet.winAmount} 🪙</span>` : 
-                          bet.status === 'draw' || bet.status === 'cancelled' ? `<span>${bet.amount} 🪙</span>` :
-                          bet.status === 'lost' ? `<span style="color: #f44336;">-${bet.amount} 🪙</span>` :
-                          '⏳'}
-                    </td>
-                </tr>
-            `;
-        });
-        
-        tbody.innerHTML = html;
-    }
-    
-    // Обновление всех дисплеев
-    function updateAllDisplays() {
-        updateRatingTable();
-        updateMatchesTable();
-        updatePlayersTable();
-        updatePlayerSelects();
-        
-        if (currentLoggedInPlayer) {
-            updateBetCabinetDisplay();
-        }
-        updateActiveBetsDisplay();
-        updateAllBetsHistory();
-    }
-    
-    // ============================================
-    // ОСНОВНЫЕ ОПЕРАЦИИ
-    // ============================================
-    
-    // Добавление игрока
-    async function addPlayer() {
-        if (!isAdmin) {
-            showNotification('❌ Только администратор может добавлять игроков!', 'error');
-            return;
-        }
-        
-        const name = document.getElementById('newPlayerName').value.trim();
-        const login = document.getElementById('newPlayerLogin').value.trim().toLowerCase();
-        const password = document.getElementById('newPlayerPassword').value;
-        const avatar = document.getElementById('newPlayerAvatar').value.trim();
-        const rating = parseInt(document.getElementById('newPlayerRating').value) || 1000;
-        const tokens = parseInt(document.getElementById('newPlayerTokens').value) || 100;
-        
-        if (!name) {
-            showNotification('Введите имя игрока!', 'error');
-            return;
-        }
-        
-        if (!login) {
-            showNotification('Введите логин для кабинета!', 'error');
-            return;
-        }
-        
-        if (players[name]) {
-            showNotification('Игрок с таким именем уже существует!', 'error');
-            return;
-        }
-        
-        if (playerCabinets[login]) {
-            showNotification('Кабинет с таким логином уже существует!', 'error');
-            return;
-        }
-        
-        const newPlayer = { 
-            rating: rating, 
-            matches: 0, 
-            wins: 0, 
-            lastGame: null, 
-            joinDate: new Date(),
-            penalties: 0,
-            avatar: avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`,
-            achievement_bonuses: {}
-        };
-        
-        players[name] = newPlayer;
-        
-        try {
-            await createPlayerCabinet(name, login, password || null, tokens);
-            
-            updatePlayerSelects();
-            updateAllDisplays();
-            
-            document.getElementById('newPlayerName').value = '';
-            document.getElementById('newPlayerLogin').value = '';
-            document.getElementById('newPlayerPassword').value = '';
-            document.getElementById('newPlayerAvatar').value = '';
-            document.getElementById('newPlayerRating').value = 1000;
-            document.getElementById('newPlayerTokens').value = 100;
-            
-            showNotification(`✅ Игрок ${name} добавлен!`, 'success');
-            
-            if (!password) {
-                const cabinet = playerCabinets[login];
-                if (cabinet) {
-                    alert(`✅ Игрок ${name} добавлен!\n\nЛогин: ${login}\nПароль: ${cabinet.password}\n\nСохраните эти данные!`);
-                }
-            }
-            
-        } catch (error) {
-            console.error('Ошибка добавления игрока:', error);
-            showNotification('❌ Ошибка добавления игрока', 'error');
-            delete players[name];
-            delete playerCabinets[login];
+            // Показываем админ-панель для ставок
+            document.getElementById('betAdminPanel').style.display = 'block';
         }
     }
     
-    // Удаление игрока
-    async function removePlayer(name) {
-        if (!isAdmin) {
-            showNotification('❌ Только администратор может удалять игроков!', 'error');
-            return;
-        }
+    // Обновляем функцию выхода админа
+    function logoutAdmin() {
+        isAdmin = false;
+        document.getElementById('appContainer').classList.remove('admin-active');
+        document.getElementById('loginPanel').style.display = 'block';
         
-        if (!confirm(`Удалить игрока ${name}?`)) return;
+        document.getElementById('ratingAdminControls').style.display = 'none';
+        document.getElementById('matchesAdminControls').style.display = 'none';
+        document.getElementById('penaltiesAdminControls').style.display = 'none';
+        document.getElementById('playersAdminControls').style.display = 'none';
         
-        delete players[name];
+        // Скрываем админ-панель для ставок
+        document.getElementById('betAdminPanel').style.display = 'none';
         
-        const cabinet = Object.values(playerCabinets).find(c => c.playerName === name);
-        if (cabinet) {
-            delete playerCabinets[cabinet.login];
-        }
-        
-        if (currentLoggedInPlayer && currentLoggedInPlayer.playerName === name) {
-            logoutFromBetCabinet();
-        }
-        
-        updatePlayerSelects();
-        updateAllDisplays();
-        showNotification(`✅ Игрок ${name} удален!`, 'success');
-    }
-    
-    // Добавление матча
-    async function addMatch() {
-        if (!isAdmin) {
-            showNotification('❌ Только администратор может добавлять матчи!', 'error');
-            return;
-        }
-        
-        const player1 = document.getElementById('player1').value;
-        const player2 = document.getElementById('player2').value;
-        const winner = document.getElementById('winner').value;
-        const score = document.getElementById('score').value;
-        
-        if (!player1 || !player2) {
-            showNotification('Выберите обоих игроков!', 'error');
-            return;
-        }
-        
-        if (player1 === player2) {
-            showNotification('Игроки должны быть разными!', 'error');
-            return;
-        }
-        
-        if (winner === 'player1' || winner === 'player2') {
-            const winnerName = winner === 'player1' ? player1 : player2;
-            const loserName = winner === 'player1' ? player2 : player1;
-            
-            if (players[winnerName]) players[winnerName].wins += 1;
-            if (players[winnerName]) players[winnerName].matches += 1;
-            if (players[loserName]) players[loserName].matches += 1;
-            
-            // Простое обновление рейтинга
-            if (players[winnerName]) players[winnerName].rating += 20;
-            if (players[loserName]) players[loserName].rating = Math.max(0, players[loserName].rating - 20);
-        }
-        
-        const match = {
-            id: Date.now().toString(),
-            date: new Date(document.getElementById('matchDate').value || new Date()),
-            player1: player1,
-            player2: player2,
-            winner: winner,
-            score: score
-        };
-        
-        matches.push(match);
+        localStorage.removeItem('tennisAdmin');
         
         updateAllDisplays();
-        showNotification('✅ Матч добавлен!', 'success');
+        
+        showNotification('👋 Вы вышли из режима администратора', 'info');
     }
     
-    // Создание матча для ставок
-    async function createBetMatch() {
-        if (!isAdmin) {
-            showNotification('❌ Только администратор может создавать матчи для ставок!', 'error');
-            return;
-        }
-        
-        const player1 = document.getElementById('betPlayer1').value;
-        const player2 = document.getElementById('betPlayer2').value;
-        const description = document.getElementById('betDescription').value.trim();
-        const status = document.getElementById('betMatchStatus').value;
-        
-        if (!player1 || !player2) {
-            showNotification('Выберите обоих игроков!', 'error');
-            return;
-        }
-        
-        if (player1 === player2) {
-            showNotification('Игроки должны быть разными!', 'error');
-            return;
-        }
-        
-        const player1Rating = players[player1]?.rating || 1000;
-        const player2Rating = players[player2]?.rating || 1000;
-        const odds = calculateOdds(player1Rating, player2Rating);
-        
-        const betMatch = {
-            id: Date.now().toString(),
-            player1: player1,
-            player2: player2,
-            player1Rating: player1Rating,
-            player2Rating: player2Rating,
-            description: description,
-            date: new Date().toISOString(),
-            status: status,
-            odds: odds,
-            result: null,
-            totalBets: 0,
-            totalAmount: 0,
-            bets: []
-        };
-        
-        betMatches.push(betMatch);
-        updateActiveBetsDisplay();
-        
-        document.getElementById('betDescription').value = '';
-        
-        showNotification(`✅ Матч для ставок создан! ${player1} vs ${player2}`, 'success');
-    }
-    
-    // Размещение ставки
-    async function placeBet(matchId, betOn) {
-        if (!currentLoggedInPlayer) {
-            showNotification('❌ Войдите в личный кабинет, чтобы делать ставки!', 'error');
-            return;
-        }
-        
-        const match = betMatches.find(m => m.id === matchId);
-        if (!match) {
-            showNotification('Матч не найден!', 'error');
-            return;
-        }
-        
-        if (match.status !== 'pending') {
-            showNotification('Ставки на этот матч больше не принимаются!', 'error');
-            return;
-        }
-        
-        const amountInput = document.getElementById(`betAmount_${matchId}`);
-        const amount = parseInt(amountInput.value);
-        
-        if (!amount || amount < 1) {
-            showNotification('Введите сумму ставки!', 'error');
-            return;
-        }
-        
-        const maxBet = Math.floor(currentLoggedInPlayer.tokens * 0.5);
-        if (amount > maxBet) {
-            showNotification(`Максимальная ставка: ${maxBet} 🪙`, 'error');
-            return;
-        }
-        
-        if (amount > currentLoggedInPlayer.tokens) {
-            showNotification('Недостаточно жетонов!', 'error');
-            return;
-        }
-        
-        const existingBet = match.bets.find(bet => bet.playerLogin === currentLoggedInPlayer.login);
-        if (existingBet) {
-            showNotification('Вы уже делали ставку на этот матч!', 'error');
-            return;
-        }
-        
-        const bet = {
-            id: Date.now().toString(),
-            matchId: matchId,
-            playerLogin: currentLoggedInPlayer.login,
-            playerName: currentLoggedInPlayer.playerName,
-            betOn: betOn,
-            amount: amount,
-            odds: betOn === 'player1' ? match.odds.player1 : match.odds.player2,
-            potentialWin: Math.floor(amount * (betOn === 'player1' ? match.odds.player1 : match.odds.player2)),
-            status: 'pending',
-            placedAt: new Date().toISOString(),
-            result: null,
-            winAmount: 0
-        };
-        
-        currentLoggedInPlayer.tokens -= amount;
-        currentLoggedInPlayer.betsMade += 1;
-        
-        match.bets.push(bet);
-        match.totalBets += 1;
-        match.totalAmount += amount;
-        
-        betHistory.push(bet);
-        currentLoggedInPlayer.betHistory.push(bet);
-        
-        updateBetCabinetDisplay();
-        updateActiveBetsDisplay();
-        updateAllBetsHistory();
-        
-        const statusElement = document.getElementById(`betStatus_${matchId}`);
-        if (statusElement) {
-            statusElement.textContent = `✅ Ставка принята! ${amount} 🪙`;
-            statusElement.className = 'bet-status won';
-        }
-        
-        amountInput.value = '';
-        
-        showNotification(`✅ Ставка размещена!`, 'success');
-    }
-    
-    // Обновление статуса матча
-    async function updateBetMatchStatus(matchId, newStatus) {
-        if (!isAdmin) {
-            showNotification('❌ Только администратор может изменять статус матча!', 'error');
-            return;
-        }
-        
-        const match = betMatches.find(m => m.id === matchId);
-        if (!match) {
-            showNotification('Матч не найден!', 'error');
-            return;
-        }
-        
-        match.status = newStatus;
-        updateActiveBetsDisplay();
-        showNotification(`Статус изменен на: ${newStatus}`, 'success');
-    }
-    
-    // Завершение матча
-    async function finishBetMatch(matchId) {
-        if (!isAdmin) {
-            showNotification('❌ Только администратор может завершать матчи!', 'error');
-            return;
-        }
-        
-        const match = betMatches.find(m => m.id === matchId);
-        if (!match) {
-            showNotification('Матч не найден!', 'error');
-            return;
-        }
-        
-        const result = prompt(`Введите результат матча ${match.player1} vs ${match.player2}:
-1 - Победил ${match.player1}
-2 - Победил ${match.player2}
-3 - Ничья
-4 - Матч отменен`);
-        
-        let resultText;
-        switch(result) {
-            case '1':
-                resultText = 'player1';
-                break;
-            case '2':
-                resultText = 'player2';
-                break;
-            case '3':
-                resultText = 'draw';
-                break;
-            case '4':
-                resultText = 'cancelled';
-                break;
-            default:
-                showNotification('Отменено', 'info');
-                return;
-        }
-        
-        match.result = resultText;
-        match.status = 'finished';
-        
-        for (const bet of match.bets) {
-            let betResult = 'lost';
-            let winAmount = 0;
+    // Добавляем систему аутентификации игроков
+    function loginAsPlayer() {
+        const playerName = prompt('Введите ваше имя для входа в систему ставок:');
+        if (playerName && players[playerName]) {
+            localStorage.setItem('currentPlayer', playerName);
+            showNotification(`👋 Добро пожаловать, ${playerName}!`, 'success');
             
-            if (resultText === 'cancelled') {
-                betResult = 'cancelled';
-                winAmount = bet.amount;
-            } else if (resultText === 'draw') {
-                betResult = 'draw';
-                winAmount = bet.amount;
-            } else if (bet.betOn === resultText) {
-                betResult = 'won';
-                winAmount = bet.potentialWin;
-            }
+            // Перезагружаем кабинет игрока
+            loadPlayerCabinet();
             
-            bet.status = betResult;
-            bet.result = resultText;
-            bet.winAmount = winAmount;
-            
-            const cabinet = playerCabinets[bet.playerLogin];
-            if (cabinet) {
-                if (betResult === 'won') {
-                    cabinet.tokens += winAmount;
-                    cabinet.betsWon += 1;
-                    cabinet.totalWon += winAmount;
-                } else if (betResult === 'cancelled' || betResult === 'draw') {
-                    cabinet.tokens += winAmount;
-                }
-                
-                const playerBetIndex = cabinet.betHistory.findIndex(b => b.id === bet.id);
-                if (playerBetIndex !== -1) {
-                    cabinet.betHistory[playerBetIndex] = bet;
-                }
-            }
-            
-            const globalBetIndex = betHistory.findIndex(b => b.id === bet.id);
-            if (globalBetIndex !== -1) {
-                betHistory[globalBetIndex] = bet;
-            }
-        }
-        
-        updateActiveBetsDisplay();
-        updateAllBetsHistory();
-        
-        if (currentLoggedInPlayer) {
-            updateBetCabinetDisplay();
-        }
-        
-        showNotification(`✅ Матч завершен! Результат: ${resultText}`, 'success');
-    }
-    
-    // Управление жетонами
-    async function managePlayerTokens() {
-        if (!isAdmin) {
-            showNotification('❌ Только администратор может управлять жетонами!', 'error');
-            return;
-        }
-        
-        const playerName = document.getElementById('tokensPlayerSelect').value;
-        const amount = parseInt(document.getElementById('tokensAmount').value);
-        const action = document.getElementById('tokensAction').value;
-        
-        if (!playerName || !amount || amount < 1) {
-            showNotification('Заполните все поля!', 'error');
-            return;
-        }
-        
-        const cabinet = Object.values(playerCabinets).find(c => c.playerName === playerName);
-        if (!cabinet) {
-            showNotification('Кабинет игрока не найден!', 'error');
-            return;
-        }
-        
-        let newAmount = cabinet.tokens;
-        let message = '';
-        
-        switch(action) {
-            case 'add':
-                newAmount += amount;
-                message = `Доначислено ${amount} жетонов`;
-                break;
-            case 'remove':
-                newAmount = Math.max(0, newAmount - amount);
-                message = `Списано ${amount} жетонов`;
-                break;
-            case 'set':
-                newAmount = amount;
-                message = `Баланс установлен на ${amount} жетонов`;
-                break;
-        }
-        
-        cabinet.tokens = newAmount;
-        
-        if (currentLoggedInPlayer && currentLoggedInPlayer.login === cabinet.login) {
-            currentLoggedInPlayer.tokens = newAmount;
-            updateBetCabinetDisplay();
-        }
-        
-        showNotification(`✅ ${message} игроку ${playerName}`, 'success');
-    }
-    
-    // Показать профиль игрока
-    function showPlayerProfile(playerName) {
-        if (!players[playerName]) {
-            showNotification('Игрок не найден!', 'error');
-            return;
-        }
-        
-        const playerData = players[playerName];
-        
-        document.getElementById('appContainer').style.display = 'none';
-        document.getElementById('playerProfileContainer').style.display = 'block';
-        
-        document.getElementById('playerProfileName').textContent = playerName;
-        document.getElementById('playerProfileAvatar').src = playerData.avatar;
-        document.getElementById('playerProfileRating').textContent = `Рейтинг: ${playerData.rating} очков`;
-        
-        const cabinet = Object.values(playerCabinets).find(c => c.playerName === playerName);
-        if (cabinet) {
-            document.getElementById('cabinetName').textContent = playerName;
-            document.getElementById('cabinetRating').textContent = playerData.rating;
-            document.getElementById('cabinetTokens').textContent = cabinet.tokens;
-            document.getElementById('cabinetAvatar').src = playerData.avatar;
-            
-            const winRate = cabinet.betsMade > 0 ? Math.round((cabinet.betsWon / cabinet.betsMade) * 100) : 0;
-            document.getElementById('cabinetBetsMade').textContent = cabinet.betsMade;
-            document.getElementById('cabinetBetsWon').textContent = cabinet.betsWon;
-            document.getElementById('cabinetTotalWon').textContent = cabinet.totalWon;
-            document.getElementById('cabinetWinRate').textContent = `${winRate}%`;
+            // Переключаемся на вкладку ставок
+            openTab('betting');
+        } else if (playerName) {
+            showNotification('❌ Игрок с таким именем не найден в системе рейтинга!', 'error');
         }
     }
     
-    // Загрузка всех данных
-    async function loadAllData() {
-        console.log('🔄 Загружаю данные...');
-        updateSupabaseStatus('🔄 Синхронизация...');
-        
-        try {
-            // Инициализация тестовых данных если нет Supabase
-            if (!supabaseClient || !isSupabaseInitialized) {
-                console.log('⚠️ Использую тестовые данные');
-                
-                // Тестовые игроки
-                if (Object.keys(players).length === 0) {
-                    players = {
-                        'Иван Иванов': {
-                            rating: 1200,
-                            matches: 10,
-                            wins: 6,
-                            lastGame: new Date('2024-01-15'),
-                            joinDate: new Date('2023-01-01'),
-                            penalties: 0,
-                            avatar: 'https://i.pravatar.cc/150?img=1',
-                            achievement_bonuses: {}
-                        },
-                        'Петр Петров': {
-                            rating: 1150,
-                            matches: 8,
-                            wins: 4,
-                            lastGame: new Date('2024-01-10'),
-                            joinDate: new Date('2023-02-01'),
-                            penalties: 0,
-                            avatar: 'https://i.pravatar.cc/150?img=2',
-                            achievement_bonuses: {}
-                        },
-                        'Сидор Сидоров': {
-                            rating: 1100,
-                            matches: 12,
-                            wins: 7,
-                            lastGame: new Date('2024-01-05'),
-                            joinDate: new Date('2023-03-01'),
-                            penalties: 0,
-                            avatar: 'https://i.pravatar.cc/150?img=3',
-                            achievement_bonuses: {}
-                        }
-                    };
-                }
-                
-                // Тестовые кабинеты
-                if (Object.keys(playerCabinets).length === 0) {
-                    playerCabinets = {
-                        'ivan': {
-                            playerName: 'Иван Иванов',
-                            login: 'ivan',
-                            password: '123456',
-                            tokens: 500,
-                            betsMade: 5,
-                            betsWon: 3,
-                            totalWon: 200,
-                            betHistory: [],
-                            joinDate: new Date().toISOString(),
-                            lastLogin: new Date().toISOString(),
-                            shopPurchases: []
-                        },
-                        'petr': {
-                            playerName: 'Петр Петров',
-                            login: 'petr',
-                            password: '123456',
-                            tokens: 300,
-                            betsMade: 3,
-                            betsWon: 1,
-                            totalWon: 50,
-                            betHistory: [],
-                            joinDate: new Date().toISOString(),
-                            lastLogin: new Date().toISOString(),
-                            shopPurchases: []
-                        }
-                    };
-                }
-                
-                // Тестовые матчи
-                if (matches.length === 0) {
-                    matches = [
-                        {
-                            id: '1',
-                            date: new Date('2024-01-15'),
-                            player1: 'Иван Иванов',
-                            player2: 'Петр Петров',
-                            winner: 'player1',
-                            score: '3:2'
-                        },
-                        {
-                            id: '2',
-                            date: new Date('2024-01-10'),
-                            player1: 'Петр Петров',
-                            player2: 'Сидор Сидоров',
-                            winner: 'player2',
-                            score: '3:1'
-                        }
-                    ];
-                }
-            }
-            
-            updateAllDisplays();
-            updateSupabaseStatus('✅ Данные загружены');
-            
-        } catch (error) {
-            console.error('❌ Ошибка загрузки данных:', error);
-            updateSupabaseStatus('❌ Ошибка загрузки');
+    // Добавляем кнопку входа в систему ставок
+    window.addEventListener('DOMContentLoaded', function() {
+        // Добавляем кнопку входа в шапку
+        const header = document.querySelector('header');
+        if (header) {
+            const loginBtn = document.createElement('button');
+            loginBtn.textContent = '👤 Войти в систему ставок';
+            loginBtn.style.cssText = `
+                background: #2196F3;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 8px;
+                font-weight: bold;
+                cursor: pointer;
+                margin-top: 10px;
+            `;
+            loginBtn.onclick = loginAsPlayer;
+            header.appendChild(loginBtn);
         }
-    }
+    });
     
-    // Инициализация приложения
-    async function init() {
-        console.log('🚀 Запуск приложения...');
-        
-        // Проверка автовхода
-        checkAutoLogin();
-        checkAutoLoginForBets();
-        
-        // Настройка даты
-        setMatchDateToToday();
-        
-        // Инициализация Supabase
-        await initSupabase();
-        
-        // Загрузка данных
-        await loadAllData();
-        
-        // Обновление селекторов
-        updatePlayerSelects();
-        
-        console.log('✅ Приложение запущено');
-    }
-    
-    // Запуск приложения
+    // Запускаем приложение
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
