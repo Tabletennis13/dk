@@ -1694,7 +1694,7 @@
                 padding: 1px 6px;
             }
         }
-        /* Стили для рекламного баннера */
+       /* Стили для рекламного баннера */
 .ad-banner-container {
     text-align: center;
     margin: 20px auto;
@@ -1708,7 +1708,6 @@
 
 .ad-banner {
     width: 100%;
-    max-width: 728px;
     height: auto;
     display: block;
     margin: 0 auto;
@@ -1719,6 +1718,27 @@
 
 .ad-banner:hover {
     transform: scale(1.02);
+}
+
+/* Десктопный баннер показываем по умолчанию, мобильный скрываем */
+.desktop-banner {
+    display: block;
+}
+
+.mobile-banner {
+    display: none;
+}
+
+/* На мобильных устройствах показываем мобильный баннер, десктопный скрываем */
+@media (max-width: 768px) {
+    .desktop-banner {
+        display: none;
+    }
+    
+    .mobile-banner {
+        display: block;
+        max-width: 320px; /* Фиксированная ширина для мобильного баннера */
+    }
 }
 
 .ad-label {
