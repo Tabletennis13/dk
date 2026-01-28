@@ -1942,7 +1942,24 @@ background: white;
                     <tbody id="ratingBody"></tbody>
                                 </table>
             </div>
-           
+           <!-- НОВЫЙ БЛОК: БЛИЖАЙШИЕ ТУРНИРЫ ИЗ СИСТЕМЫ ЗАПИСИ -->
+<div class="tournaments-schedule-container" id="tournamentsScheduleContainer" style="display: none;">
+    <div class="tournaments-schedule-header">
+        <div class="level-icon">🗓️</div>
+        <h3>Ближайшие турниры из системы записи</h3>
+    </div>
+    
+    <div id="tournamentsScheduleContent" class="tournaments-schedule-content">
+        <!-- Турниры будут загружены динамически -->
+        <p>Загрузка расписания турниров...</p>
+    </div>
+    
+    <div class="tournaments-schedule-footer">
+        <p>🎯 <strong>Как присоединиться?</strong> Перейдите в систему записи, выберите удобные даты и присоединяйтесь к турнирам!</p>
+        <button class="add-btn action-btn" onclick="window.open('https://tabletennis13.github.io/ping/', '_blank')">
+            📝 Перейти в систему записи
+        </button>
+</div>
            <!-- НОВЫЙ РЕКЛАМНЫЙ БЛОК С КАРТИНКОЙ (ниже таблицы, но выше старого баннера) -->
            <div class="ad-banner-container">
                <a href="https://tabletennis13.github.io/on/" target="_blank" rel="noopener noreferrer">
