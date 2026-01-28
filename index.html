@@ -1694,6 +1694,170 @@ background: white;
                 padding: 1px 6px;
             }
         }
+        /* Стили для блока расписания турниров */
+.tournaments-schedule-container {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin: 25px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    border-left: 5px solid #38bdf8;
+}
+
+.tournaments-schedule-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(56, 189, 248, 0.3);
+}
+
+.tournaments-schedule-header .level-icon {
+    font-size: 2em;
+}
+
+.tournaments-schedule-header h3 {
+    font-size: 1.5em;
+    margin: 0;
+    color: #facc15;
+}
+
+.tournaments-schedule-content {
+    min-height: 100px;
+}
+
+.tournament-schedule-item {
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.tournament-schedule-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    border-color: #38bdf8;
+}
+
+.tournament-schedule-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.tournament-schedule-name {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #38bdf8;
+    flex: 1;
+}
+
+.tournament-schedule-date {
+    background: #facc15;
+    color: black;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-left: 10px;
+}
+
+.tournament-schedule-participants {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+    font-size: 0.95em;
+}
+
+.participants-count {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+.tournament-schedule-status {
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.status-confirmed {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid #22c55e;
+    color: #22c55e;
+}
+
+.status-waiting {
+    background: rgba(250, 204, 21, 0.1);
+    border: 1px solid #facc15;
+    color: #facc15;
+}
+
+.tournament-schedule-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.tournaments-schedule-footer {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(56, 189, 248, 0.1);
+    border-radius: 8px;
+    text-align: center;
+    border-top: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.tournaments-schedule-footer p {
+    margin-bottom: 15px;
+    color: #cbd5e1;
+}
+
+.no-tournaments-message {
+    text-align: center;
+    padding: 40px;
+    color: #94a3b8;
+    font-size: 1.1em;
+}
+
+.no-tournaments-message .icon {
+    font-size: 3em;
+    margin-bottom: 15px;
+    display: block;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+    .tournaments-schedule-container {
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .tournament-schedule-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .tournament-schedule-date {
+        margin-left: 0;
+        align-self: flex-start;
+    }
+    
+    .tournament-schedule-actions {
+        flex-direction: column;
+    }
+}
     /* Стили для рекламного баннера */
 .ad-banner-container {
     text-align: center;
@@ -2313,7 +2477,222 @@ background: white;
     let tournamentPhotos = [];
     let isAdmin = false;
     const ADMIN_PASSWORD = "13311331";
+    // ============================================
+// ФУНКЦИИ ДЛЯ ИНТЕГРАЦИИ С СИСТЕМОЙ ЗАПИСИ ТУРНИРОВ
+// ============================================
+
+// Конфигурация для системы записи турниров
+const TOURNAMENT_SCHEDULE_URL = 'https://bqycjfcjtdawyrysgrbw.supabase.co';
+const TOURNAMENT_SCHEDULE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE';
+
+let tournamentScheduleClient = null;
+let scheduledTournaments = [];
+
+// Инициализация клиента для системы записи
+function initTournamentScheduleClient() {
+    if (window.supabase && window.supabase.createClient) {
+        tournamentScheduleClient = window.supabase.createClient(
+            TOURNAMENT_SCHEDULE_URL,
+            TOURNAMENT_SCHEDULE_KEY
+        );
+        console.log('✅ Клиент для системы записи турниров инициализирован');
+        return true;
+    }
+    return false;
+}
+
+// Загрузка запланированных турниров
+async function loadScheduledTournaments() {
+    if (!tournamentScheduleClient) {
+        if (!initTournamentScheduleClient()) {
+            console.warn('❌ Не удалось инициализировать клиент для системы записи турниров');
+            return;
+        }
+    }
     
+    try {
+        console.log('🔄 Загружаю запланированные турниры...');
+        
+        // Получаем турниры из таблицы pp_tournaments
+        const { data: tournaments, error: tournamentsError } = await tournamentScheduleClient
+            .from('pp_tournaments')
+            .select('*')
+            .order('play_date', { ascending: true })
+            .gte('play_date', new Date().toISOString().split('T')[0]) // Только будущие турниры
+            .limit(10);
+        
+        if (tournamentsError) {
+            console.error('❌ Ошибка загрузки турниров:', tournamentsError);
+            return;
+        }
+        
+        if (!tournaments || tournaments.length === 0) {
+            console.log('ℹ️ Нет запланированных турниров');
+            scheduledTournaments = [];
+            updateTournamentsScheduleDisplay();
+            return;
+        }
+        
+        // Для каждого турнира загружаем участников
+        const tournamentsWithParticipants = await Promise.all(
+            tournaments.map(async (tournament) => {
+                const { data: participants } = await tournamentScheduleClient
+                    .from('pp_user_dates')
+                    .select(`
+                        user_id,
+                        pp_users!inner(login)
+                    `)
+                    .eq('selected_date', tournament.play_date);
+                
+                return {
+                    ...tournament,
+                    participants: participants || [],
+                    participant_count: participants ? participants.length : 0
+                };
+            })
+        );
+        
+        scheduledTournaments = tournamentsWithParticipants;
+        console.log(`✅ Загружено ${scheduledTournaments.length} запланированных турниров`);
+        updateTournamentsScheduleDisplay();
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки расписания турниров:', error);
+    }
+}
+
+// Обновление отображения расписания турниров
+function updateTournamentsScheduleDisplay() {
+    const container = document.getElementById('tournamentsScheduleContainer');
+    const content = document.getElementById('tournamentsScheduleContent');
+    
+    if (!container || !content) return;
+    
+    // Если нет турниров, скрываем блок
+    if (!scheduledTournaments || scheduledTournaments.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    // Показываем блок
+    container.style.display = 'block';
+    
+    // Сортируем турниры по дате (ближайшие первыми)
+    const sortedTournaments = [...scheduledTournaments].sort((a, b) => 
+        new Date(a.play_date) - new Date(b.play_date)
+    );
+    
+    let html = '';
+    
+    sortedTournaments.forEach(tournament => {
+        const isConfirmed = tournament.participant_count >= 3;
+        const date = new Date(tournament.play_date);
+        const formattedDate = date.toLocaleDateString('ru-RU', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'long'
+        });
+        
+        // Получаем имена участников
+        const participantNames = tournament.participants
+            .slice(0, 3) // Показываем только первых 3 участников
+            .map(p => p.pp_users?.login || 'Аноним')
+            .join(', ');
+        
+        // Проверяем, участвует ли текущий игрок (если известен)
+        let currentPlayerParticipates = false;
+        if (Object.keys(players).length > 0) {
+            // Простая проверка: смотрим, совпадает ли имя игрока с участником
+            const currentPlayerNames = Object.keys(players);
+            currentPlayerParticipates = tournament.participants.some(p => 
+                currentPlayerNames.includes(p.pp_users?.login || '')
+            );
+        }
+        
+        html += `
+            <div class="tournament-schedule-item">
+                <div class="tournament-schedule-item-header">
+                    <div class="tournament-schedule-name">${tournament.name}</div>
+                    <div class="tournament-schedule-date">${formattedDate}</div>
+                </div>
+                
+                <div class="tournament-schedule-participants">
+                    <span class="participants-count">👥 ${tournament.participant_count} участников</span>
+                    <span style="color: #cbd5e1; font-size: 0.9em;">
+                        ${participantNames}${tournament.participant_count > 3 ? '...' : ''}
+                    </span>
+                </div>
+                
+                <div class="tournament-schedule-status ${isConfirmed ? 'status-confirmed' : 'status-waiting'}">
+                    ${isConfirmed 
+                        ? `✅ Турнир подтвержден! (нужно 3 участника)` 
+                        : `⏳ Ожидание участников: нужно еще ${3 - tournament.participant_count}`
+                    }
+                    ${currentPlayerParticipates ? '<br>🎯 <strong>Вы участвуете в этом турнире!</strong>' : ''}
+                </div>
+                
+                <div class="tournament-schedule-actions">
+                    <button class="action-btn add-btn" 
+                            onclick="window.open('https://tabletennis13.github.io/ping/', '_blank')"
+                            style="flex: 1;">
+                        📝 Записаться
+                    </button>
+                    <button class="action-btn" 
+                            onclick="viewTournamentDetails('${tournament.play_date}')"
+                            style="flex: 1; background: #38bdf8;">
+                        👁️ Подробнее
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
+}
+
+// Просмотр деталей турнира
+function viewTournamentDetails(tournamentDate) {
+    const tournament = scheduledTournaments.find(t => t.play_date === tournamentDate);
+    if (!tournament) return;
+    
+    const date = new Date(tournament.play_date);
+    const formattedDate = date.toLocaleDateString('ru-RU', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+    
+    // Формируем список участников
+    const participantList = tournament.participants
+        .map((p, index) => `${index + 1}. ${p.pp_users?.login || 'Аноним'}`)
+        .join('\n');
+    
+    const message = `
+🏓 Турнир: ${tournament.name}
+📅 Дата: ${formattedDate}
+👥 Участников: ${tournament.participant_count}
+${tournament.participant_count >= 3 ? '✅ Турнир подтвержден' : '⏳ Ожидание участников'}
+
+🎯 Список участников:
+${participantList || 'Пока нет участников'}
+
+📝 Для записи или изменения участия перейдите в систему записи.
+    `.trim();
+    
+    alert(message);
+}
+
+// Автоматическая загрузка расписания турниров при инициализации
+async function initTournamentSchedule() {
+    try {
+        await loadScheduledTournaments();
+        // Обновляем расписание каждые 5 минут
+        setInterval(loadScheduledTournaments, 5 * 60 * 1000);
+    } catch (error) {
+        console.error('❌ Ошибка инициализации системы расписания:', error);
+    }
+}
     // ============================================
     // НОВЫЕ ФУНКЦИИ ДЛЯ ТУРНИРОВ
     // ============================================
