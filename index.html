@@ -1985,13 +1985,25 @@ async function loadPingTournaments() {
   try {
     list.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">🔄 Загрузка...</div>';
     
+    // Используем исправленный ключ API (убрал проблемный символ)
+    const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE';
+    
+    // Формируем URL для запроса
+    const today = new Date().toISOString().split('T')[0];
+    const url = `https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_tournaments?select=*&order=play_date.asc&play_date=gte.${today}`;
+    
     // 1. Сначала загружаем турниры
-    const tournamentsResponse = await fetch('https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_tournaments?select=*&order=play_date.asc&play_date=gte.' + new Date().toISOString().split('T')[0], {
+    const tournamentsResponse = await fetch(url, {
       headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImVхcCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE'
+        'apikey': API_KEY,
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
       }
     });
+    
+    if (!tournamentsResponse.ok) {
+      throw new Error(`Ошибка HTTP: ${tournamentsResponse.status}`);
+    }
     
     const tournaments = await tournamentsResponse.json();
     
@@ -2003,7 +2015,7 @@ async function loadPingTournaments() {
     // Показываем блок
     container.style.display = 'block';
     
-    const today = new Date();
+    const todayDate = new Date();
     
     // Берем ближайшие 5 турниров независимо от даты
     const upcomingTournaments = tournaments.slice(0, 5);
@@ -2013,28 +2025,34 @@ async function loadPingTournaments() {
     // Для каждого турнира загружаем участников
     for (const t of upcomingTournaments) {
       // 2. Загружаем ВСЕХ участников этого турнира
-      const participantsResponse = await fetch(
-        `https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_user_dates?select=pp_users(login)&play_date=eq.${t.play_date}`,
-        {
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2M015NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE'
-          }
-        }
-      );
+      const participantsUrl = `https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_user_dates?select=pp_users(login)&play_date=eq.${t.play_date}`;
       
-      const participantsData = await participantsResponse.json();
-      const participantCount = participantsData ? participantsData.length : 0;
-      const allParticipantNames = participantsData 
-        ? participantsData.map(p => p.pp_users?.login || 'Аноним')
-        : [];
+      const participantsResponse = await fetch(participantsUrl, {
+        headers: {
+          'apikey': API_KEY,
+          'Authorization': `Bearer ${API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      let participantsData = [];
+      let participantCount = 0;
+      let allParticipantNames = [];
+      
+      if (participantsResponse.ok) {
+        participantsData = await participantsResponse.json();
+        participantCount = participantsData ? participantsData.length : 0;
+        allParticipantNames = participantsData 
+          ? participantsData.map(p => p.pp_users?.login || 'Аноним')
+          : [];
+      }
       
       const date = new Date(t.play_date);
       const dayOfWeek = date.toLocaleDateString('ru-RU', { weekday: 'short' });
       const dayMonth = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-      const isToday = date.toDateString() === today.toDateString();
-      const isTomorrow = new Date(date.getTime() - 24 * 60 * 60 * 1000).toDateString() === today.toDateString();
-      const daysDiff = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+      const isToday = date.toDateString() === todayDate.toDateString();
+      const isTomorrow = new Date(date.getTime() - 24 * 60 * 60 * 1000).toDateString() === todayDate.toDateString();
+      const daysDiff = Math.ceil((date - todayDate) / (1000 * 60 * 60 * 24));
       
       // Определяем статус по количеству дней до турнира
       let dateStatus = '';
@@ -2055,10 +2073,9 @@ async function loadPingTournaments() {
       }
       
       html += `
-        <div style="background: white; border: 2px solid #e8f5e9; border-radius: 8px; padding: 12px; margin-bottom: 10px; transition: transform 0.2s;">
+        <div style="background: white; border: 2px solid #e8f5e9; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
           <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-            <div style="background: ${dateColor}; 
-                        color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em;">
+            <div style="background: ${dateColor}; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em;">
               ${dateStatus}
             </div>
             <div style="font-weight: bold; color: #333; font-size: 1.1em;">${dayMonth}</div>
