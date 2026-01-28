@@ -2350,7 +2350,7 @@ setInterval(loadPingTournaments, 5 * 60 * 1000);
             <div class="admin-controls-panel" id="ratingAdminControls">
                 <h4>⚙️ Управление рейтингом (администратор)</h4>
                 <button class="penalty-btn action-btn" onclick="checkAndApplyPenalties()">
-                    ⚠️ Применить авто-штрафы (14+ дней = -60)
+                    ⚠️ Применить авто-штрафы (14+ дней = -30)
                 </button>
                 <button class="add-btn action-btn" onclick="saveManualRatings()">
                     💾 Сохранить изменения очков
@@ -6792,13 +6792,13 @@ setInterval(loadPingTournaments, 5 * 60 * 1000);
             }
         }
         
-        player.rating -= 60;
-        player.penalties += 60;
+        player.rating -= 30;
+        player.penalties += 30;
         
         const penaltyRecord = {
             date: now,
             player: playerName,
-            amount: 60,
+            amount: 30,
             daysInactive: daysInactive,
             manual: true
         };
@@ -6835,7 +6835,7 @@ setInterval(loadPingTournaments, 5 * 60 * 1000);
                 
                 if (daysInactive >= 14) {
                     const penaltyWeeks = Math.floor(daysInactive / 14);
-                    const penaltyAmount = penaltyWeeks * 60;
+                    const penaltyAmount = penaltyWeeks * 30;
                     
                     playerData.rating -= penaltyAmount;
                     playerData.penalties += penaltyAmount;
