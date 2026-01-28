@@ -1940,7 +1940,7 @@ background: white;
                         </tr>
                     </thead>
                     <tbody id="ratingBody"></tbody>
-                                               </table>
+                                                               </table>
             </div>
 
 <script>
@@ -1999,8 +1999,7 @@ function updateCurrentTournamentDisplay() {
 function updateTournamentBracketPreview(tournament, matches) {
     const container = document.getElementById('tournamentBracketPreview');
     if (!container) return;
-    const pendingMatches = matches.filter(m => !m.winner);
-    const completedMatches = matches.filter(m => m.winner);
+    
     if (tournament.type.includes('round_robin')) {
         showRoundRobinPreview(tournament, container, matches);
     } else {
@@ -2009,44 +2008,94 @@ function updateTournamentBracketPreview(tournament, matches) {
 }
 
 function showRoundRobinPreview(tournament, container, matches) {
-    const players = tournament.players || [];
+    const playersList = tournament.players || [];
     const isPairs = tournament.is_pairs;
+    
     if (isPairs && tournament.pairs) {
         showPairsRoundRobinPreview(tournament, container, matches);
         return;
     }
-    let html = `<div style="overflow-x: auto;"><div style="display: flex; gap: 10px; min-width: ${players.length * 120}px;">`;
-    players.forEach((player, index) => {
-        const playerMatches = matches.filter(m => m.player1 === player || m.player2 === player);
-        const wins = playerMatches.filter(m => m.winner === player).length;
-        const played = playerMatches.length;
-        html += `<div style="flex: 1; min-width: 100px; background: #f8f9fa; border-radius: 8px; padding: 10px; text-align: center;">
-                <img src="${players[player]?.avatar || 'https://i.pravatar.cc/150?img=3'}" style="width: 40px; height: 40px; border-radius: 50%; margin-bottom: 5px; border: 2px solid #4CAF50;">
-                <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">${player}</div>
-                <div style="font-size: 0.8em; color: #666;">${wins} побед</div>
-                <div style="font-size: 0.8em; color: #666;">${played} игр</div>
+    
+    // Считаем статистику для таблицы
+    const stats = {};
+    playersList.forEach(player => {
+        stats[player] = { wins: 0, played: 0 };
+    });
+    
+    matches.forEach(match => {
+        if (match.player1 && stats[match.player1]) {
+            stats[match.player1].played++;
+            if (match.winner === match.player1) stats[match.player1].wins++;
+        }
+        if (match.player2 && stats[match.player2]) {
+            stats[match.player2].played++;
+            if (match.winner === match.player2) stats[match.player2].wins++;
+        }
+    });
+    
+    // Сортируем по победам
+    const sortedPlayers = [...playersList].sort((a, b) => {
+        if (stats[b].wins !== stats[a].wins) return stats[b].wins - stats[a].wins;
+        return stats[b].played - stats[a].played;
+    });
+    
+    let html = `<div style="overflow-x: auto;">
+        <div style="display: flex; gap: 8px; min-width: ${sortedPlayers.length * 90}px;">`;
+    
+    sortedPlayers.forEach((player, index) => {
+        const playerData = players[player];
+        const stat = stats[player] || { wins: 0, played: 0 };
+        
+        html += `<div style="flex: 1; min-width: 80px; background: ${index < 2 ? '#e8f5e9' : '#f8f9fa'}; border-radius: 6px; padding: 8px; text-align: center; border: 1px solid ${index < 2 ? '#4CAF50' : '#e0e0e0'};">
+                <img src="${playerData?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                     style="width: 35px; height: 35px; border-radius: 50%; margin-bottom: 4px; border: 2px solid ${index < 2 ? '#4CAF50' : '#ddd'};"
+                     onerror="this.src='https://i.pravatar.cc/150?img=3'">
+                <div style="font-weight: bold; font-size: 0.8em; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${player}</div>
+                <div style="font-size: 0.7em; color: #666;">${stat.wins} побед</div>
+                <div style="font-size: 0.7em; color: #666;">${stat.played} игр</div>
             </div>`;
     });
-    html += `</div></div><div style="text-align: center; margin-top: 10px; font-size: 0.85em; color: #666;">Круговой турнир • Каждый играет с каждым</div>`;
+    
+    html += `</div></div>
+        <div style="text-align: center; margin-top: 8px; font-size: 0.75em; color: #666;">
+            Топ-2 выходят в финал
+        </div>`;
     container.innerHTML = html;
 }
 
 function showPairsRoundRobinPreview(tournament, container, matches) {
     const pairs = tournament.pairs || [];
-    let html = `<div style="overflow-x: auto;"><div style="display: flex; gap: 10px; min-width: ${pairs.length * 150}px;">`;
+    
+    let html = `<div style="overflow-x: auto;">
+        <div style="display: flex; gap: 8px; min-width: ${pairs.length * 120}px;">`;
+    
     pairs.forEach((pair, index) => {
-        const player1 = players[pair[0]];
-        const player2 = players[pair[1]];
-        html += `<div style="flex: 1; min-width: 140px; background: #f8f9fa; border-radius: 8px; padding: 10px; text-align: center;">
-                <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 8px;">
-                    <img src="${player1?.avatar || 'https://i.pravatar.cc/150?img=3'}" style="width: 35px; height: 35px; border-radius: 50%; border: 2px solid #2196F3;">
-                    <img src="${player2?.avatar || 'https://i.pravatar.cc/150?img=3'}" style="width: 35px; height: 35px; border-radius: 50%; border: 2px solid #4CAF50;">
+        const player1Data = players[pair[0]];
+        const player2Data = players[pair[1]];
+        
+        html += `<div style="flex: 1; min-width: 110px; background: #f8f9fa; border-radius: 6px; padding: 8px; text-align: center; border: 1px solid #e0e0e0;">
+                <div style="display: flex; justify-content: center; gap: 3px; margin-bottom: 6px;">
+                    <img src="${player1Data?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                         style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid #2196F3;"
+                         onerror="this.src='https://i.pravatar.cc/150?img=3'">
+                    <img src="${player2Data?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                         style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid #4CAF50;"
+                         onerror="this.src='https://i.pravatar.cc/150?img=3'">
                 </div>
-                <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 5px;">Пара ${index + 1}</div>
-                <div style="font-size: 0.75em; color: #666; line-height: 1.3;">${pair[0]}<br>${pair[1]}</div>
+                <div style="font-weight: bold; font-size: 0.75em; margin-bottom: 4px;">
+                    Пара ${index + 1}
+                </div>
+                <div style="font-size: 0.65em; color: #666; line-height: 1.2;">
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pair[0]}</div>
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pair[1]}</div>
+                </div>
             </div>`;
     });
-    html += `</div></div><div style="text-align: center; margin-top: 10px; font-size: 0.85em; color: #666;">Парный турнир • ${pairs.length} пары</div>`;
+    
+    html += `</div></div>
+        <div style="text-align: center; margin-top: 8px; font-size: 0.75em; color: #666;">
+            Парный турнир • ${pairs.length} пары
+        </div>`;
     container.innerHTML = html;
 }
 
@@ -2054,14 +2103,15 @@ function showBracketPreview(tournament, container, matches) {
     const completedMatches = matches.filter(m => m.winner).length;
     const totalMatches = matches.length;
     const progressPercent = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0;
+    
     let html = `<div style="text-align: center;">
-            <div style="margin-bottom: 15px;">
-                <div style="font-size: 2em; margin-bottom: 5px;">${progressPercent}%</div>
-                <div style="height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                    <div style="height: 100%; width: ${progressPercent}%; background: linear-gradient(90deg, #4CAF50, #8BC34A); border-radius: 4px;"></div>
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 1.5em; margin-bottom: 3px;">${progressPercent}%</div>
+                <div style="height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden;">
+                    <div style="height: 100%; width: ${progressPercent}%; background: linear-gradient(90deg, #4CAF50, #8BC34A); border-radius: 3px;"></div>
                 </div>
             </div>
-            <div style="display: flex; justify-content: space-around; font-size: 0.9em;">
+            <div style="display: flex; justify-content: space-around; font-size: 0.8em;">
                 <div><div style="font-weight: bold; color: #333;">Сыграно</div><div style="color: #4CAF50; font-weight: bold;">${completedMatches}</div></div>
                 <div><div style="font-weight: bold; color: #333;">Всего</div><div style="color: #666; font-weight: bold;">${totalMatches}</div></div>
                 <div><div style="font-weight: bold; color: #333;">Осталось</div><div style="color: #FF9800; font-weight: bold;">${totalMatches - completedMatches}</div></div>
@@ -2073,19 +2123,38 @@ function showBracketPreview(tournament, container, matches) {
 function updateNextMatchesList(tournament, matches) {
     const container = document.getElementById('nextMatchesList');
     if (!container) return;
+    
+    // Сортируем матчи: сначала незавершенные, потом завершенные
     const pendingMatches = matches.filter(m => !m.winner);
-    if (pendingMatches.length === 0) {
-        container.innerHTML = `<div style="text-align: center; padding: 20px; color: #4CAF50; font-weight: bold;">🏆 Все матчи завершены!</div>`;
+    const completedMatches = matches.filter(m => m.winner);
+    
+    if (matches.length === 0) {
+        container.innerHTML = `<div style="text-align: center; padding: 15px; color: #666; font-size: 0.9em;">
+            Матчи формируются...
+        </div>`;
         return;
     }
+    
+    // Получаем умное расписание для незавершенных матчей
     const smartSchedule = getSmartSchedule(tournament, pendingMatches);
+    const allMatchesToShow = [...smartSchedule, ...completedMatches];
     
-    let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+    if (allMatchesToShow.length === 0) {
+        container.innerHTML = `<div style="text-align: center; padding: 20px; color: #4CAF50; font-weight: bold;">
+            🏆 Все матчи завершены!
+        </div>`;
+        return;
+    }
     
-    smartSchedule.forEach((match, index) => {
+    let html = '<div style="display: flex; flex-direction: column; gap: 6px;">';
+    
+    allMatchesToShow.forEach((match, index) => {
         const player1 = match.player1;
         const player2 = match.player2;
         const isPairs = match.player1_partner && match.player2_partner;
+        const isCompleted = !!match.winner;
+        const score = match.score || '';
+        
         let player1Display = player1;
         let player2Display = player2;
         
@@ -2094,19 +2163,42 @@ function updateNextMatchesList(tournament, matches) {
             player2Display = `${player2} & ${match.player2_partner}`;
         }
         
-        html += `<div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px;">
+        const player1Data = players[player1];
+        const player2Data = players[player2];
+        
+        html += `<div style="background: ${isCompleted ? '#e8f5e9' : 'white'}; border: 1px solid ${isCompleted ? '#4CAF50' : '#e0e0e0'}; border-radius: 6px; padding: 8px; ${isCompleted ? 'border-left: 4px solid #4CAF50;' : ''}">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <img src="${players[player1]?.avatar || 'https://i.pravatar.cc/150?img=3'}" style="width: 30px; height: 30px; border-radius: 50%;">
-                        <div style="font-weight: bold; font-size: 0.9em;">${player1Display}</div>
+                    <div style="display: flex; align-items: center; gap: 6px; flex: 1;">
+                        <img src="${player1Data?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                             style="width: 26px; height: 26px; border-radius: 50%;"
+                             onerror="this.src='https://i.pravatar.cc/150?img=3'">
+                        <div style="font-weight: ${isCompleted && match.winner === player1 ? 'bold' : 'normal'}; font-size: 0.8em; color: ${isCompleted && match.winner === player1 ? '#2E7D32' : '#333'};">${player1Display}</div>
                     </div>
-                    <div style="font-weight: bold; color: #666; font-size: 0.9em;">vs</div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="font-weight: bold; font-size: 0.9em;">${player2Display}</div>
-                        <img src="${players[player2]?.avatar || 'https://i.pravatar.cc/150?img=3'}" style="width: 30px; height: 30px; border-radius: 50%;">
+                    
+                    <div style="display: flex; flex-direction: column; align-items: center; margin: 0 8px;">
+                        <div style="font-weight: bold; color: #666; font-size: 0.75em;">vs</div>
+                        ${isCompleted ? `<div style="background: #4CAF50; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7em; font-weight: bold; margin-top: 2px;">${score}</div>` : ''}
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 6px; flex: 1; justify-content: flex-end;">
+                        <div style="font-weight: ${isCompleted && match.winner === player2 ? 'bold' : 'normal'}; font-size: 0.8em; color: ${isCompleted && match.winner === player2 ? '#2E7D32' : '#333'}; text-align: right;">${player2Display}</div>
+                        <img src="${player2Data?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                             style="width: 26px; height: 26px; border-radius: 50%;"
+                             onerror="this.src='https://i.pravatar.cc/150?img=3'">
                     </div>
                 </div>
-                <div style="text-align: center; margin-top: 5px; font-size: 0.8em; color: #666;">${match.round ? `Раунд ${match.round}` : 'Турнирный матч'}</div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                    <div style="font-size: 0.7em; color: #666;">
+                        ${match.round ? `Раунд ${match.round}` : 'Турнирный матч'}
+                    </div>
+                    <div style="font-size: 0.7em;">
+                        ${isCompleted ? 
+                            `<span style="color: #4CAF50; font-weight: bold;">✓ Сыграно</span>` : 
+                            `<span style="color: #FF9800; font-weight: bold;">⏳ Ожидается</span>`
+                        }
+                    </div>
+                </div>
             </div>`;
     });
     
@@ -2192,77 +2284,72 @@ document.addEventListener('DOMContentLoaded', function() {
     const ratingTab = document.getElementById('rating');
     if (ratingTab) {
         const currentTournamentHTML = `
-            <div id="currentTournamentBlock" style="display: none; margin: 25px 0;">
-              <div style="border: 2px solid #FF9800; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                <div style="background: linear-gradient(135deg, #FFF3E0 0%, #FFECB3 100%); padding: 20px; border-bottom: 2px solid #FFE082;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 15px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                      <div style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <div id="currentTournamentBlock" style="display: none; margin: 15px 0;">
+              <div style="border: 1px solid #FF9800; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="background: linear-gradient(135deg, #FFF3E0 0%, #FFECB3 100%); padding: 15px; border-bottom: 1px solid #FFE082;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <div style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                         🏆
                       </div>
                       <div>
-                        <h3 style="margin: 0; color: #333; font-size: 1.3em;" id="currentTournamentTitle">Текущий турнир</h3>
-                        <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;" id="currentTournamentSubtitle">Идет прямо сейчас</p>
+                        <h3 style="margin: 0; color: #333; font-size: 1.2em;" id="currentTournamentTitle">Текущий турнир</h3>
+                        <p style="margin: 3px 0 0 0; color: #666; font-size: 0.85em;" id="currentTournamentSubtitle">Идет прямо сейчас</p>
                       </div>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                      <button onclick="viewCurrentTournament()" style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9em;">
-                        👁️ Смотреть
-                      </button>
                     </div>
                   </div>
                   
                   <!-- Статус турнира -->
-                  <div style="margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.8); border-radius: 8px;">
+                  <div style="margin-bottom: 12px; padding: 8px; background: rgba(255,255,255,0.8); border-radius: 6px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                       <div>
-                        <div style="font-weight: bold; color: #333;">Статус:</div>
-                        <div id="tournamentStatusBadge" style="display: inline-block; background: #4CAF50; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; font-weight: bold; margin-top: 5px;">
+                        <div style="font-weight: bold; color: #333; font-size: 0.9em;">Статус:</div>
+                        <div id="tournamentStatusBadge" style="display: inline-block; background: #4CAF50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; font-weight: bold; margin-top: 3px;">
                           Активен
                         </div>
                       </div>
                       <div style="text-align: right;">
-                        <div style="font-weight: bold; color: #333;">Прогресс:</div>
-                        <div id="tournamentProgress" style="font-size: 1.1em; font-weight: bold; color: #4CAF50;">0/0 матчей</div>
+                        <div style="font-weight: bold; color: #333; font-size: 0.9em;">Прогресс:</div>
+                        <div id="tournamentProgress" style="font-size: 1em; font-weight: bold; color: #4CAF50;">0/0 матчей</div>
                       </div>
                     </div>
                   </div>
                   
                   <!-- Турнирная сетка (миниатюра) -->
-                  <div style="margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                      <div style="font-weight: bold; color: #333; font-size: 1.1em;">Турнирная сетка</div>
-                      <div id="tournamentScheduleInfo" style="font-size: 0.85em; color: #666;">Автоматическое расписание</div>
+                  <div style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                      <div style="font-weight: bold; color: #333; font-size: 1em;">Турнирная сетка</div>
+                      <div id="tournamentScheduleInfo" style="font-size: 0.8em; color: #666;">Авторасписание</div>
                     </div>
-                    <div id="tournamentBracketPreview" style="min-height: 100px; margin-bottom: 15px;">
-                      <div style="text-align: center; padding: 20px; color: #666;">
-                        <div style="font-size: 24px; margin-bottom: 10px;">🔄</div>
+                    <div id="tournamentBracketPreview" style="min-height: 80px; margin-bottom: 12px;">
+                      <div style="text-align: center; padding: 15px; color: #666;">
+                        <div style="font-size: 20px; margin-bottom: 8px;">🔄</div>
                         Загрузка сетки турнира...
                       </div>
                     </div>
                   </div>
                   
-                  <!-- Следующие матчи -->
-                  <div style="margin-bottom: 15px;">
-                    <div style="font-weight: bold; color: #333; font-size: 1.1em; margin-bottom: 10px;">Все предстоящие матчи</div>
-                    <div id="nextMatchesList" style="min-height: 60px; margin-bottom: 10px;">
-                      <div style="text-align: center; padding: 15px; color: #666; font-size: 0.9em;">
+                  <!-- Все матчи -->
+                  <div style="margin-bottom: 12px;">
+                    <div style="font-weight: bold; color: #333; font-size: 1em; margin-bottom: 8px;">Все матчи турнира</div>
+                    <div id="nextMatchesList" style="min-height: 50px; margin-bottom: 8px;">
+                      <div style="text-align: center; padding: 12px; color: #666; font-size: 0.85em;">
                         Матчи формируются...
                       </div>
                     </div>
                   </div>
                   
                   <!-- Кнопка действий -->
-                  <div style="display: flex; gap: 10px;">
-                    <button onclick="viewCurrentTournament()" style="flex: 1; background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); color: white; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 1em;">
+                  <div style="display: flex; gap: 8px;">
+                    <button onclick="viewCurrentTournament()" style="flex: 1; background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); color: white; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 0.9em;">
                       🎮 Перейти к турниру
                     </button>
                   </div>
                 </div>
                 
-                <div style="background: #FFF8E1; padding: 15px; text-align: center; border-top: 1px solid #FFE082;">
-                  <p style="margin: 0; color: #666; font-size: 0.9em;">
-                    <span style="color: #FF9800; font-weight: bold;">🎯</span> Турнир автоматически обновляется. Следите за прогрессом!
+                <div style="background: #FFF8E1; padding: 10px; text-align: center; border-top: 1px solid #FFE082;">
+                  <p style="margin: 0; color: #666; font-size: 0.8em;">
+                    <span style="color: #FF9800; font-weight: bold;">🎯</span> Турнир обновляется автоматически
                   </p>
                 </div>
               </div>
