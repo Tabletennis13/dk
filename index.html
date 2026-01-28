@@ -1990,8 +1990,6 @@ async function loadPingTournaments() {
     const today = new Date().toISOString().split('T')[0];
     const url = `https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_tournaments?select=*&order=play_date.asc&play_date=gte.${today}`;
     
-    console.log('🔍 Загружаем турниры...');
-    
     // 1. Загружаем турниры
     const tournamentsResponse = await fetch(url, {
       headers: {
@@ -2026,9 +2024,9 @@ async function loadPingTournaments() {
     for (const t of upcomingTournaments) {
       console.log(`🔍 Загружаем участников для турнира ${t.name} (${t.play_date})`);
       
-      // 2. Загружаем участников этого турнира - попробуем разные варианты
-      // Вариант 1: Прямой запрос без вложений
-      const participantsUrl = `https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_user_dates?play_date=eq.${t.play_date}`;
+      // 2. Загружаем участников этого турнира - ПРАВИЛЬНЫЙ ЗАПРОС
+      // Согласно коду приложения, используется таблица pp_user_dates со связью с pp_users
+      const participantsUrl = `https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_user_dates?select=pp_users(login)&selected_date=eq.${t.play_date}`;
       
       console.log('URL запроса участников:', participantsUrl);
       
@@ -2040,63 +2038,21 @@ async function loadPingTournaments() {
         }
       });
       
-      let participantsData = [];
       let participantCount = 0;
       let allParticipantNames = [];
       
       if (participantsResponse.ok) {
-        participantsData = await participantsResponse.json();
+        const participantsData = await participantsResponse.json();
         
-        console.log('📊 Данные участников (сырые):', participantsData);
+        console.log('📊 Данные участников:', participantsData);
         
         if (participantsData && participantsData.length > 0) {
           participantCount = participantsData.length;
           
-          // Теперь пробуем получить информацию об игроках отдельным запросом
-          // Сначала соберем все ID пользователей
-          const userIds = participantsData
-            .map(p => p.user_id || p.userId || p.user)
-            .filter(id => id);
-          
-          console.log('Найдены ID пользователей:', userIds);
-          
-          if (userIds.length > 0) {
-            // Запрашиваем информацию о пользователях по их ID
-            const usersUrl = `https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_users?id=in.(${userIds.join(',')})`;
-            
-            const usersResponse = await fetch(usersUrl, {
-              headers: {
-                'apikey': API_KEY,
-                'Authorization': `Bearer ${API_KEY}`,
-                'Content-Type': 'application/json'
-              }
-            });
-            
-            if (usersResponse.ok) {
-              const usersData = await usersResponse.json();
-              console.log('Данные пользователей:', usersData);
-              
-              allParticipantNames = usersData
-                .map(user => user.login || user.name || user.username || 'Участник')
-                .filter(name => name);
-            } else {
-              console.log('Не удалось загрузить данные пользователей');
-            }
-          }
-          
-          // Если не удалось получить имена через запрос, попробуем другие способы
-          if (allParticipantNames.length === 0) {
-            allParticipantNames = participantsData.map(p => {
-              // Пробуем разные варианты структуры
-              if (p.login) return p.login;
-              if (p.name) return p.name;
-              if (p.username) return p.username;
-              if (p.user_name) return p.user_name;
-              if (p.user && typeof p.user === 'string') return p.user;
-              if (p.user_id && typeof p.user_id === 'string') return `Участник #${p.user_id}`;
-              return 'Участник';
-            }).filter(name => name !== 'Участник');
-          }
+          // Извлекаем имена из вложенной структуры
+          allParticipantNames = participantsData
+            .filter(p => p.pp_users && p.pp_users.login)
+            .map(p => p.pp_users.login);
           
           console.log('Извлеченные имена участников:', allParticipantNames);
         }
@@ -2156,7 +2112,7 @@ async function loadPingTournaments() {
             </div>
           ` : `
             <div style="color: #999; font-size: 0.85em; margin-bottom: 8px; text-align: center; padding: 5px;">
-              ${participantCount > 0 ? `📊 Участников: ${participantCount} (имена не загружены)` : '😔 Пока никто не записался'}
+              😔 Пока никто не записался
             </div>
           `}
           
