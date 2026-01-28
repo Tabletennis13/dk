@@ -1940,7 +1940,7 @@ background: white;
                         </tr>
                     </thead>
                     <tbody id="ratingBody"></tbody>
-                                                               </table>
+                                                                               </table>
             </div>
 
 <script>
@@ -1955,7 +1955,6 @@ function updateCurrentTournamentDisplay() {
     const container = document.getElementById('currentTournamentBlock');
     if (!container) return;
     
-    // Проверяем, что мы на вкладке "Рейтинг"
     const isRatingTabActive = document.getElementById('rating')?.classList.contains('active');
     if (!isRatingTabActive) {
         container.style.display = 'none';
@@ -1968,7 +1967,6 @@ function updateCurrentTournamentDisplay() {
         return;
     }
     
-    // Показываем блок только на вкладке "Рейтинг"
     container.style.display = 'block';
     document.getElementById('currentTournamentTitle').textContent = currentTournament.name;
     document.getElementById('currentTournamentSubtitle').textContent = currentTournament.type_name;
@@ -1990,7 +1988,7 @@ function updateCurrentTournamentDisplay() {
     }
     const scheduleInfo = document.getElementById('tournamentScheduleInfo');
     if (currentTournament.players) {
-        scheduleInfo.textContent = `${currentTournament.players.length} участников • Авторасписание`;
+        scheduleInfo.textContent = `${currentTournament.players.length} участников • Умное расписание`;
     }
     updateTournamentBracketPreview(currentTournament, matches);
     updateNextMatchesList(currentTournament, matches);
@@ -2016,7 +2014,6 @@ function showRoundRobinPreview(tournament, container, matches) {
         return;
     }
     
-    // Считаем статистику для таблицы
     const stats = {};
     playersList.forEach(player => {
         stats[player] = { wins: 0, played: 0 };
@@ -2033,7 +2030,6 @@ function showRoundRobinPreview(tournament, container, matches) {
         }
     });
     
-    // Сортируем по победам
     const sortedPlayers = [...playersList].sort((a, b) => {
         if (stats[b].wins !== stats[a].wins) return stats[b].wins - stats[a].wins;
         return stats[b].played - stats[a].played;
@@ -2124,7 +2120,6 @@ function updateNextMatchesList(tournament, matches) {
     const container = document.getElementById('nextMatchesList');
     if (!container) return;
     
-    // Сортируем матчи: сначала незавершенные, потом завершенные
     const pendingMatches = matches.filter(m => !m.winner);
     const completedMatches = matches.filter(m => m.winner);
     
@@ -2135,7 +2130,7 @@ function updateNextMatchesList(tournament, matches) {
         return;
     }
     
-    // Получаем умное расписание для незавершенных матчей
+    // Используем правильное расписание
     const smartSchedule = getSmartSchedule(tournament, pendingMatches);
     const allMatchesToShow = [...smartSchedule, ...completedMatches];
     
@@ -2215,48 +2210,139 @@ function viewCurrentTournament() {
     }
 }
 
+// ПРАВИЛЬНАЯ ФУНКЦИЯ РАСПРЕДЕЛЕНИЯ МАТЧЕЙ
 function getSmartSchedule(tournament, pendingMatches) {
     const players = tournament.players || [];
-    if (players.length === 3) return pendingMatches;
+    
+    // Для 3 игроков - кто-то обязательно играет подряд, возвращаем как есть
+    if (players.length === 3) {
+        return pendingMatches;
+    }
+    
+    // Создаем копию матчей
+    let availableMatches = [...pendingMatches];
     const schedule = [];
-    const playerLastMatch = {};
-    const availableMatches = [...pendingMatches];
-    players.forEach(player => { playerLastMatch[player] = -1; });
+    
+    // Объект для отслеживания, когда игрок последний раз играл
+    const playerLastMatchRound = {};
+    players.forEach(player => {
+        playerLastMatchRound[player] = -2; // -2 значит не играл в последних 2 раундах
+    });
+    
     let round = 0;
-    while (availableMatches.length > 0) {
+    const maxRounds = players.length * 3; // Максимальное количество раундов
+    
+    while (availableMatches.length > 0 && round < maxRounds) {
         const roundMatches = [];
-        const playersInRound = new Set();
+        const playersInThisRound = new Set();
+        
+        // Сортируем матчи по "свежести" игроков
+        availableMatches.sort((a, b) => {
+            // Считаем, насколько игроки "отдохнули"
+            const aPlayer1Rest = playerLastMatchRound[a.player1] || -2;
+            const aPlayer2Rest = playerLastMatchRound[a.player2] || -2;
+            const bPlayer1Rest = playerLastMatchRound[b.player1] || -2;
+            const bPlayer2Rest = playerLastMatchRound[b.player2] || -2;
+            
+            // Чем меньше значение, тем дольше не играл
+            const aTotalRest = aPlayer1Rest + aPlayer2Rest;
+            const bTotalRest = bPlayer1Rest + bPlayer2Rest;
+            
+            return aTotalRest - bTotalRest; // Сначала те, кто дольше не играл
+        });
+        
+        // Пытаемся заполнить раунд
         for (let i = 0; i < availableMatches.length; i++) {
             const match = availableMatches[i];
             const { player1, player2 } = match;
-            if (!playersInRound.has(player1) && !playersInRound.has(player2)) {
-                const lastRound1 = playerLastMatch[player1] || -1;
-                const lastRound2 = playerLastMatch[player2] || -1;
-                if (lastRound1 < round && lastRound2 < round) {
+            
+            // Проверяем, что игроки не играют в этом раунде
+            if (!playersInThisRound.has(player1) && !playersInThisRound.has(player2)) {
+                // Проверяем, что оба игрока отдохнули минимум 1 раунд
+                const player1CanPlay = playerLastMatchRound[player1] < (round - 1);
+                const player2CanPlay = playerLastMatchRound[player2] < (round - 1);
+                
+                if (player1CanPlay && player2CanPlay) {
+                    // Добавляем матч в раунд
                     roundMatches.push(match);
-                    playersInRound.add(player1);
-                    playersInRound.add(player2);
-                    playerLastMatch[player1] = round;
-                    playerLastMatch[player2] = round;
+                    playersInThisRound.add(player1);
+                    playersInThisRound.add(player2);
+                    
+                    // Обновляем, когда игроки последний раз играли
+                    playerLastMatchRound[player1] = round;
+                    playerLastMatchRound[player2] = round;
+                    
+                    // Удаляем из доступных
                     availableMatches.splice(i, 1);
                     i--;
                 }
             }
         }
-        if (roundMatches.length > 0) schedule.push(...roundMatches);
-        round++;
-        if (round > players.length * 2 && availableMatches.length > 0) {
-            schedule.push(...availableMatches);
-            break;
+        
+        // Если нашли матчи для этого раунда
+        if (roundMatches.length > 0) {
+            schedule.push(...roundMatches);
+            round++;
+        } else {
+            // Если не можем найти матч, где оба игрока отдохнули
+            // Находим игрока, который дольше всех не играл
+            let mostRestedPlayer = null;
+            let minRoundValue = Infinity;
+            
+            players.forEach(player => {
+                if (playerLastMatchRound[player] < minRoundValue) {
+                    minRoundValue = playerLastMatchRound[player];
+                    mostRestedPlayer = player;
+                }
+            });
+            
+            if (mostRestedPlayer) {
+                // Ищем любой матч с этим игроком
+                for (let i = 0; i < availableMatches.length; i++) {
+                    const match = availableMatches[i];
+                    if ((match.player1 === mostRestedPlayer || match.player2 === mostRestedPlayer) &&
+                        !playersInThisRound.has(match.player1) && 
+                        !playersInThisRound.has(match.player2)) {
+                        
+                        const otherPlayer = match.player1 === mostRestedPlayer ? match.player2 : match.player1;
+                        
+                        // Даже если второй игрок не отдохнул, добавляем матч
+                        roundMatches.push(match);
+                        playersInThisRound.add(match.player1);
+                        playersInThisRound.add(match.player2);
+                        
+                        playerLastMatchRound[match.player1] = round;
+                        playerLastMatchRound[match.player2] = round;
+                        
+                        availableMatches.splice(i, 1);
+                        break;
+                    }
+                }
+                
+                if (roundMatches.length > 0) {
+                    schedule.push(...roundMatches);
+                    round++;
+                }
+            }
+        }
+        
+        // Если не нашли ни одного матча для раунда, делаем пустой раунд
+        if (roundMatches.length === 0) {
+            round++;
         }
     }
+    
+    // Если остались нераспределенные матчи, добавляем их в конец
+    if (availableMatches.length > 0) {
+        schedule.push(...availableMatches);
+    }
+    
     return schedule;
 }
 
 // Автоматическое обновление
 setTimeout(() => {
     updateCurrentTournamentDisplay();
-    // Подключаем к обновлению данных
     if (typeof updateAllDisplays === 'function') {
         const originalUpdateAllDisplays = updateAllDisplays;
         updateAllDisplays = function() {
@@ -2279,7 +2365,6 @@ setInterval(updateCurrentTournamentDisplay, 30000);
 
 <!-- HTML БЛОК ДЛЯ ВСТАВКИ В ВКЛАДКУ РЕЙТИНГ -->
 <script>
-// Вставляем HTML блок только на вкладку "Рейтинг"
 document.addEventListener('DOMContentLoaded', function() {
     const ratingTab = document.getElementById('rating');
     if (ratingTab) {
@@ -2299,7 +2384,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                   </div>
                   
-                  <!-- Статус турнира -->
                   <div style="margin-bottom: 12px; padding: 8px; background: rgba(255,255,255,0.8); border-radius: 6px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                       <div>
@@ -2315,11 +2399,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                   </div>
                   
-                  <!-- Турнирная сетка (миниатюра) -->
                   <div style="margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                       <div style="font-weight: bold; color: #333; font-size: 1em;">Турнирная сетка</div>
-                      <div id="tournamentScheduleInfo" style="font-size: 0.8em; color: #666;">Авторасписание</div>
+                      <div id="tournamentScheduleInfo" style="font-size: 0.8em; color: #666;">Умное расписание</div>
                     </div>
                     <div id="tournamentBracketPreview" style="min-height: 80px; margin-bottom: 12px;">
                       <div style="text-align: center; padding: 15px; color: #666;">
@@ -2329,7 +2412,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                   </div>
                   
-                  <!-- Все матчи -->
                   <div style="margin-bottom: 12px;">
                     <div style="font-weight: bold; color: #333; font-size: 1em; margin-bottom: 8px;">Все матчи турнира</div>
                     <div id="nextMatchesList" style="min-height: 50px; margin-bottom: 8px;">
@@ -2339,7 +2421,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                   </div>
                   
-                  <!-- Кнопка действий -->
                   <div style="display: flex; gap: 8px;">
                     <button onclick="viewCurrentTournament()" style="flex: 1; background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); color: white; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 0.9em;">
                       🎮 Перейти к турниру
@@ -2349,13 +2430,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 <div style="background: #FFF8E1; padding: 10px; text-align: center; border-top: 1px solid #FFE082;">
                   <p style="margin: 0; color: #666; font-size: 0.8em;">
-                    <span style="color: #FF9800; font-weight: bold;">🎯</span> Турнир обновляется автоматически
+                    <span style="color: #FF9800; font-weight: bold;">🎯</span> Игроки не играют подряд (кроме турниров на 3 игрока)
                   </p>
                 </div>
               </div>
             </div>`;
         
-        // Вставляем блок после таблицы рейтинга в вкладке "Рейтинг"
         const ratingTable = ratingTab.querySelector('.table-container');
         if (ratingTable) {
             ratingTable.insertAdjacentHTML('afterend', currentTournamentHTML);
