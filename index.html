@@ -1942,66 +1942,7 @@ background: white;
                     <tbody id="ratingBody"></tbody>
                                 </table>
             </div>
-           <!-- ТУРНИРЫ ИЗ СИСТЕМЫ ЗАПИСИ -->
-<div id="tournamentsFromPing" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 10px; margin: 20px 0; color: white; display: none;">
-  <h3 style="margin-top:0;">🗓️ Ближайшие турниры</h3>
-  <div id="pingTournamentsList">Загрузка...</div>
-  <button onclick="loadPingTournaments()" style="background:#4CAF50; color:white; border:none; padding:8px 15px; border-radius:5px; margin-top:10px; cursor:pointer;">Обновить</button>
-</div>
-
-<script>
-async function loadPingTournaments() {
-  const container = document.getElementById('tournamentsFromPing');
-  const list = document.getElementById('pingTournamentsList');
-  
-  try {
-    list.innerHTML = 'Загружаем...';
-    
-    // Прямой запрос к Supabase
-    const response = await fetch('https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_tournaments?select=*&order=play_date.asc', {
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE'
-      }
-    });
-    
-    const tournaments = await response.json();
-    
-    if (!tournaments || tournaments.length === 0) {
-      list.innerHTML = '<p>Нет запланированных турниров</p>';
-      container.style.display = 'none';
-      return;
-    }
-    
-    // Показываем блок
-    container.style.display = 'block';
-    
-    let html = '';
-    tournaments.slice(0, 5).forEach(t => {
-      const date = new Date(t.play_date);
-      const formattedDate = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-      
-      html += `
-        <div style="background:rgba(255,255,255,0.1); padding:10px; border-radius:8px; margin:8px 0;">
-          <div style="font-weight:bold;">${t.name}</div>
-          <div style="font-size:14px; color:#e0e0e0;">📅 ${formattedDate}</div>
-          <a href="https://tabletennis13.github.io/ping/" target="_blank" 
-             style="color:#4CAF50; font-size:14px; text-decoration:none;">📝 Записаться →</a>
-        </div>
-      `;
-    });
-    
-    list.innerHTML = html;
-    
-  } catch (error) {
-    console.error('Ошибка загрузки турниров:', error);
-    list.innerHTML = '<p>Не удалось загрузить турниры</p>';
-  }
-}
-
-// Загружаем турниры при загрузке страницы
-setTimeout(loadPingTournaments, 1000);
-</script>
+           
            <!-- НОВЫЙ РЕКЛАМНЫЙ БЛОК С КАРТИНКОЙ (ниже таблицы, но выше старого баннера) -->
            <div class="ad-banner-container">
                <a href="https://tabletennis13.github.io/on/" target="_blank" rel="noopener noreferrer">
