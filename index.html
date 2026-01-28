@@ -1942,6 +1942,8 @@ background: white;
                     <tbody id="ratingBody"></tbody>
                                                </table>
             </div>
+                </table>
+            </div>
 <!-- ТЕКУЩИЙ ТУРНИР НА ГЛАВНОЙ СТРАНИЦЕ -->
 <div id="currentTournamentBlock" style="display: none; margin: 25px 0;">
   <div style="border: 2px solid #FF9800; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
@@ -2226,24 +2228,30 @@ function getSmartSchedule(tournament, pendingMatches) {
     return schedule;
 }
 
-// Перехватываем обновления данных
-const originalUpdateAllDisplays = updateAllDisplays;
-updateAllDisplays = function() {
-    originalUpdateAllDisplays();
-    updateCurrentTournamentDisplay();
-};
-
-const originalLoadTournaments = loadTournaments;
-loadTournaments = async function() {
-    await originalLoadTournaments();
-    updateCurrentTournamentDisplay();
-};
-
 // Автоматическое обновление
-setTimeout(updateCurrentTournamentDisplay, 1000);
+setTimeout(() => {
+    updateCurrentTournamentDisplay();
+    // Подключаем к обновлению данных
+    if (typeof updateAllDisplays === 'function') {
+        const originalUpdateAllDisplays = updateAllDisplays;
+        updateAllDisplays = function() {
+            originalUpdateAllDisplays();
+            updateCurrentTournamentDisplay();
+        };
+    }
+    
+    if (typeof loadTournaments === 'function') {
+        const originalLoadTournaments = loadTournaments;
+        loadTournaments = async function() {
+            await originalLoadTournaments();
+            updateCurrentTournamentDisplay();
+        };
+    }
+}, 1000);
+
 setInterval(updateCurrentTournamentDisplay, 30000);
 </script>
-
+        
 <!-- ТУРНИРЫ ДЛЯ ЗАПИСИ -->
 <div id="tournamentsForSignup" style="display: none; margin: 25px 0;">
   <div style="border: 2px solid #667eea; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
