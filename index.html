@@ -1942,6 +1942,511 @@ background: white;
                     <tbody id="ratingBody"></tbody>
                                 </table>
             </div>
+            <!-- Текущий турнир -->
+<div id="currentTournamentSection" style="display: none; margin: 25px 0;">
+    <div style="border: 3px solid #4CAF50; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
+        <div style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; padding: 15px 20px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                <div style="background: white; color: #4CAF50; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold;">
+                    🏓
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.4em;">Текущий турнир</h3>
+                    <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 0.95em;" id="currentTournamentInfo"></p>
+                </div>
+                <div style="margin-left: auto; background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9em;" id="currentTournamentStatus"></div>
+            </div>
+        </div>
+        
+        <div style="padding: 20px; background: white;">
+            <div id="currentTournamentGrid" style="min-height: 200px;">
+                <div style="text-align: center; padding: 40px 20px; color: #666;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">🏓</div>
+                    <h4 style="margin: 0 0 10px 0;">Турнир не найден</h4>
+                    <p>Создайте турнир для его отображения здесь</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="openTab('tournaments')" 
+                        style="flex: 1; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s;">
+                    📋 Все турниры
+                </button>
+                <button onclick="viewCurrentTournament()" 
+                        style="flex: 1; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s;">
+                    👁️ Просмотр турнира
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Функция для обновления отображения текущего турнира
+function updateCurrentTournamentDisplay() {
+    const section = document.getElementById('currentTournamentSection');
+    const gridContainer = document.getElementById('currentTournamentGrid');
+    const tournamentInfo = document.getElementById('currentTournamentInfo');
+    const tournamentStatus = document.getElementById('currentTournamentStatus');
+    
+    if (!section || !gridContainer || tournaments.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    
+    // Находим активные турниры (статус 'active' или первый в списке если нет активных)
+    const activeTournaments = tournaments.filter(t => t.status === 'active');
+    const currentTournament = activeTournaments.length > 0 ? activeTournaments[0] : tournaments[0];
+    
+    if (!currentTournament) {
+        section.style.display = 'none';
+        return;
+    }
+    
+    // Показываем секцию
+    section.style.display = 'block';
+    
+    // Обновляем информацию
+    const date = new Date(currentTournament.created_at);
+    tournamentInfo.textContent = `${currentTournament.type_name} • ${date.toLocaleDateString('ru-RU')} • ${currentTournament.players.length} участников`;
+    
+    if (currentTournament.status === 'active') {
+        tournamentStatus.textContent = '🏃 В процессе';
+        tournamentStatus.style.background = '#FF9800';
+        tournamentStatus.style.color = 'white';
+    } else {
+        tournamentStatus.textContent = '🏁 Завершен';
+        tournamentStatus.style.background = '#9E9E9E';
+        tournamentStatus.style.color = 'white';
+    }
+    
+    // Создаем турнирную сетку с правильным распределением матчей
+    createTournamentGrid(currentTournament, gridContainer);
+    
+    // Сохраняем ID текущего турнира для быстрого доступа
+    section.dataset.currentTournamentId = currentTournament.id;
+}
+
+// Функция для создания турнирной сетки с правильным распределением
+function createTournamentGrid(tournament, container) {
+    const matches = tournamentMatches.filter(m => m.tournament_id === tournament.id);
+    const players = tournament.players || [];
+    const isPairsTournament = tournament.is_pairs;
+    
+    if (players.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Нет участников</div>';
+        return;
+    }
+    
+    let html = '';
+    
+    // Для круговых турниров показываем распределение матчей
+    if (tournament.type.includes('round_robin')) {
+        html = createRoundRobinGrid(tournament, players, matches, isPairsTournament);
+    } 
+    // Для олимпийской системы показываем сетку
+    else if (tournament.type.includes('single_elimination')) {
+        html = createSingleEliminationGrid(tournament, players, matches, isPairsTournament);
+    }
+    // Для двойной элиминации
+    else if (tournament.type.includes('double_elimination')) {
+        html = createDoubleEliminationGrid(tournament, players, matches, isPairsTournament);
+    }
+    // Для парных турниров
+    else if (isPairsTournament) {
+        html = createPairsTournamentGrid(tournament, matches);
+    }
+    // По умолчанию показываем список участников
+    else {
+        html = createDefaultTournamentGrid(tournament, players, matches);
+    }
+    
+    container.innerHTML = html;
+}
+
+// Функция для создания сетки кругового турнира с правильным распределением
+function createRoundRobinGrid(tournament, players, matches, isPairs) {
+    const completedMatches = matches.filter(m => m.winner).length;
+    const totalMatches = matches.length;
+    const progress = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0;
+    
+    let html = `
+        <div style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="font-weight: bold; color: #333;">${tournament.type_name}</div>
+                <div style="background: #f0f0f0; padding: 5px 12px; border-radius: 15px; font-size: 0.9em;">
+                    Матчи: ${completedMatches}/${totalMatches}
+                </div>
+            </div>
+            <div style="height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; margin-bottom: 15px;">
+                <div style="height: 100%; width: ${progress}%; background: #4CAF50; border-radius: 4px;"></div>
+            </div>
+        </div>
+    `;
+    
+    // Показываем участников с аватарками
+    if (isPairs && tournament.pairs) {
+        html += '<h4 style="margin: 0 0 15px 0; color: #333;">Пары участников:</h4>';
+        html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">';
+        
+        tournament.pairs.forEach((pair, index) => {
+            const pairMatches = matches.filter(m => 
+                (m.player1 === pair[0] && m.player1_partner === pair[1]) ||
+                (m.player2 === pair[0] && m.player2_partner === pair[1])
+            );
+            const wins = pairMatches.filter(m => 
+                m.winner === pair[0] || m.winner === pair[1] || 
+                m.winner === m.player1_partner || m.winner === m.player2_partner
+            ).length;
+            
+            html += `
+                <div style="background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px;">
+                    <div style="font-weight: bold; color: #4CAF50; margin-bottom: 10px;">Пара ${index + 1}</div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <img src="${players[pair[0]]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                             style="width: 32px; height: 32px; border-radius: 50%;">
+                        <span style="font-size: 14px;">${pair[0]}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <img src="${players[pair[1]]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                             style="width: 32px; height: 32px; border-radius: 50%;">
+                        <span style="font-size: 14px;">${pair[1]}</span>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0; text-align: center; font-weight: bold; color: #333;">
+                        ${wins} побед
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+    } else {
+        html += '<h4 style="margin: 0 0 15px 0; color: #333;">Участники:</h4>';
+        html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">';
+        
+        players.forEach((player, index) => {
+            const playerData = players[player];
+            const playerMatches = matches.filter(m => 
+                m.player1 === player || m.player2 === player
+            );
+            const wins = playerMatches.filter(m => m.winner === player).length;
+            
+            html += `
+                <div style="background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer;" onclick="showPlayerProfile('${player}')">
+                    <div style="position: relative;">
+                        <img src="${playerData?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                             style="width: 40px; height: 40px; border-radius: 50%;">
+                        ${wins > 0 ? `<div style="position: absolute; bottom: -5px; right: -5px; background: #4CAF50; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">${wins}</div>` : ''}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; font-size: 14px;">${player}</div>
+                        <div style="font-size: 12px; color: #666;">${wins}/${playerMatches.length} побед</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+    }
+    
+    // Показываем расписание матчей с правильным распределением
+    html += '<h4 style="margin: 20px 0 15px 0; color: #333;">Расписание матчей:</h4>';
+    html += createOptimizedMatchSchedule(tournament, players, matches, isPairs);
+    
+    return html;
+}
+
+// Функция для создания оптимизированного расписания матчей
+function createOptimizedMatchSchedule(tournament, playersList, allMatches, isPairs) {
+    if (playersList.length <= 1) {
+        return '<div style="text-align: center; padding: 20px; color: #666;">Недостаточно игроков</div>';
+    }
+    
+    let matches = allMatches.slice();
+    let html = '<div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">';
+    
+    // Для 3 игроков - особое расписание чтобы минимизировать ожидание
+    if (playersList.length === 3 && !isPairs) {
+        const schedule = createScheduleFor3Players(playersList, matches);
+        schedule.forEach((round, roundIndex) => {
+            html += `<div style="padding: 12px 15px; background: ${roundIndex % 2 === 0 ? '#f8f9fa' : 'white'}; border-bottom: 1px solid #e0e0e0;">
+                        <div style="font-weight: bold; color: #4CAF50; margin-bottom: 8px;">${round.name}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img src="${players[round.player1]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                     style="width: 30px; height: 30px; border-radius: 50%;">
+                                <span>${round.player1}</span>
+                            </div>
+                            <div style="font-weight: bold; color: #666;">vs</div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img src="${players[round.player2]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                     style="width: 30px; height: 30px; border-radius: 50%;">
+                                <span>${round.player2}</span>
+                            </div>
+                            <div style="min-width: 60px; text-align: center;">
+                                ${round.status === 'completed' ? 
+                                    `<span style="background: #4CAF50; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.85em;">${round.score || 'Завершен'}</span>` :
+                                    `<span style="background: #FF9800; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.85em;">Ожидается</span>`}
+                            </div>
+                        </div>
+                    </div>`;
+        });
+    } 
+    // Для 4+ игроков используем более сложное расписание
+    else if (playersList.length >= 4 && !isPairs) {
+        const schedule = createOptimizedSchedule(playersList, matches);
+        schedule.forEach((round, roundIndex) => {
+            html += `<div style="padding: 12px 15px; background: ${roundIndex % 2 === 0 ? '#f8f9fa' : 'white'}; border-bottom: 1px solid #e0e0e0;">
+                        <div style="font-weight: bold; color: #4CAF50; margin-bottom: 8px;">${round.name}</div>`;
+            
+            round.matches.forEach((match, matchIndex) => {
+                html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: ${matchIndex < round.matches.length - 1 ? '8px' : '0'};">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img src="${players[match.player1]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                     style="width: 30px; height: 30px; border-radius: 50%;">
+                                <span>${match.player1}</span>
+                            </div>
+                            <div style="font-weight: bold; color: #666;">vs</div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img src="${players[match.player2]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                     style="width: 30px; height: 30px; border-radius: 50%;">
+                                <span>${match.player2}</span>
+                            </div>
+                            <div style="min-width: 60px; text-align: center;">
+                                ${match.status === 'completed' ? 
+                                    `<span style="background: #4CAF50; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.85em;">${match.score || 'Завершен'}</span>` :
+                                    `<span style="background: #FF9800; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.85em;">Ожидается</span>`}
+                            </div>
+                        </div>`;
+            });
+            
+            html += '</div>';
+        });
+    }
+    // Для парных турниров
+    else if (isPairs && tournament.pairs) {
+        tournament.pairs.forEach((pair, pairIndex) => {
+            const pairMatches = matches.filter(m => 
+                (m.player1 === pair[0] && m.player1_partner === pair[1]) ||
+                (m.player2 === pair[0] && m.player2_partner === pair[1])
+            );
+            
+            pairMatches.forEach((match, matchIndex) => {
+                const opponent = match.player1 === pair[0] ? 
+                    `${match.player2} & ${match.player2_partner}` : 
+                    `${match.player1} & ${match.player1_partner}`;
+                
+                html += `<div style="padding: 12px 15px; background: ${matchIndex % 2 === 0 ? '#f8f9fa' : 'white'}; border-bottom: 1px solid #e0e0e0;">
+                            <div style="font-weight: bold; color: #4CAF50; margin-bottom: 8px;">Матч ${matchIndex + 1}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <img src="${players[pair[0]]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                             style="width: 25px; height: 25px; border-radius: 50%;">
+                                        <img src="${players[pair[1]]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                             style="width: 25px; height: 25px; border-radius: 50%;">
+                                    </div>
+                                    <span>${pair[0]} & ${pair[1]}</span>
+                                </div>
+                                <div style="font-weight: bold; color: #666;">vs</div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span>${opponent}</span>
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <img src="${players[match.player2]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                             style="width: 25px; height: 25px; border-radius: 50%;">
+                                        <img src="${players[match.player2_partner]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
+                                             style="width: 25px; height: 25px; border-radius: 50%;">
+                                    </div>
+                                </div>
+                                <div style="min-width: 60px; text-align: center;">
+                                    ${match.status === 'completed' ? 
+                                        `<span style="background: #4CAF50; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.85em;">Завершен</span>` :
+                                        `<span style="background: #FF9800; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.85em;">Ожидается</span>`}
+                                </div>
+                            </div>
+                        </div>`;
+            });
+        });
+    }
+    
+    html += '</div>';
+    return html;
+}
+
+// Создание расписания для 3 игроков
+function createScheduleFor3Players(playersList, existingMatches) {
+    const schedule = [];
+    
+    // Игроки: A, B, C
+    const [A, B, C] = playersList;
+    
+    // Проверяем какие матчи уже сыграны
+    const playedMatches = existingMatches.filter(m => m.winner);
+    
+    // Матч 1: A vs B
+    const match1 = playedMatches.find(m => 
+        (m.player1 === A && m.player2 === B) || (m.player1 === B && m.player2 === A)
+    );
+    schedule.push({
+        name: 'Матч 1',
+        player1: A,
+        player2: B,
+        status: match1 ? 'completed' : 'scheduled',
+        score: match1?.score || null
+    });
+    
+    // Матч 2: Победитель матча 1 vs C
+    schedule.push({
+        name: 'Матч 2',
+        player1: match1?.winner || (Math.random() > 0.5 ? A : B),
+        player2: C,
+        status: 'scheduled',
+        score: null
+    });
+    
+    // Матч 3: Проигравший матча 1 vs Проигравший матча 2
+    const loserMatch1 = match1 ? (match1.winner === A ? B : A) : (Math.random() > 0.5 ? A : B);
+    schedule.push({
+        name: 'Матч 3',
+        player1: loserMatch1,
+        player2: 'Проигравший матча 2',
+        status: 'scheduled',
+        score: null
+    });
+    
+    return schedule;
+}
+
+// Создание оптимизированного расписания для 4+ игроков
+function createOptimizedSchedule(playersList, existingMatches) {
+    const schedule = [];
+    const players = [...playersList];
+    
+    // Перемешиваем игроков для более случайного распределения
+    for (let i = players.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [players[i], players[j]] = [players[j], players[i]];
+    }
+    
+    // Создаем пары, стараясь чтобы игроки не играли подряд
+    const rounds = [];
+    const usedPairs = new Set();
+    
+    // Создаем первый раунд
+    const round1 = [];
+    for (let i = 0; i < players.length; i += 2) {
+        if (i + 1 < players.length) {
+            const pairKey = `${players[i]}-${players[i+1]}`;
+            const reverseKey = `${players[i+1]}-${players[i]}`;
+            
+            if (!usedPairs.has(pairKey) && !usedPairs.has(reverseKey)) {
+                round1.push({
+                    player1: players[i],
+                    player2: players[i+1]
+                });
+                usedPairs.add(pairKey);
+            }
+        }
+    }
+    
+    if (round1.length > 0) {
+        rounds.push({
+            name: 'Раунд 1',
+            matches: round1.map(match => {
+                const existingMatch = existingMatches.find(m => 
+                    (m.player1 === match.player1 && m.player2 === match.player2) ||
+                    (m.player1 === match.player2 && m.player2 === match.player1)
+                );
+                return {
+                    ...match,
+                    status: existingMatch?.winner ? 'completed' : 'scheduled',
+                    score: existingMatch?.score || null
+                };
+            })
+        });
+    }
+    
+    // Создаем второй раунд с другим распределением
+    if (players.length >= 4) {
+        const round2 = [];
+        const tempPlayers = [...players];
+        
+        // Сдвигаем игроков для нового распределения
+        tempPlayers.push(tempPlayers.shift());
+        
+        for (let i = 0; i < tempPlayers.length; i += 2) {
+            if (i + 1 < tempPlayers.length) {
+                const pairKey = `${tempPlayers[i]}-${tempPlayers[i+1]}`;
+                const reverseKey = `${tempPlayers[i+1]}-${tempPlayers[i]}`;
+                
+                if (!usedPairs.has(pairKey) && !usedPairs.has(reverseKey)) {
+                    round2.push({
+                        player1: tempPlayers[i],
+                        player2: tempPlayers[i+1]
+                    });
+                    usedPairs.add(pairKey);
+                }
+            }
+        }
+        
+        if (round2.length > 0) {
+            rounds.push({
+                name: 'Раунд 2',
+                matches: round2.map(match => {
+                    const existingMatch = existingMatches.find(m => 
+                        (m.player1 === match.player1 && m.player2 === match.player2) ||
+                        (m.player1 === match.player2 && m.player2 === match.player1)
+                    );
+                    return {
+                        ...match,
+                        status: existingMatch?.winner ? 'completed' : 'scheduled',
+                        score: existingMatch?.score || null
+                    };
+                })
+            });
+        }
+    }
+    
+    return rounds;
+}
+
+// Функция для просмотра текущего турнира
+function viewCurrentTournament() {
+    const section = document.getElementById('currentTournamentSection');
+    if (section && section.dataset.currentTournamentId) {
+        viewTournament(section.dataset.currentTournamentId);
+    } else if (tournaments.length > 0) {
+        viewTournament(tournaments[0].id);
+    }
+}
+
+// Обновляем функцию loadAllData для отображения текущего турнира
+const originalLoadAllData = loadAllData;
+loadAllData = async function() {
+    await originalLoadAllData();
+    updateCurrentTournamentDisplay();
+};
+
+// Обновляем функцию updateAllDisplays
+const originalUpdateAllDisplays = updateAllDisplays;
+updateAllDisplays = function() {
+    originalUpdateAllDisplays();
+    updateCurrentTournamentDisplay();
+};
+
+// Обновляем функцию updateTournamentsDisplay для обновления текущего турнира
+const originalUpdateTournamentsDisplay = updateTournamentsDisplay;
+updateTournamentsDisplay = function() {
+    originalUpdateTournamentsDisplay();
+    updateCurrentTournamentDisplay();
+};
+
+// Инициализируем при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(updateCurrentTournamentDisplay, 500);
+});
+</script>
+            
 <!-- ТУРНИРЫ ДЛЯ ЗАПИСИ -->
 <div id="tournamentsForSignup" style="display: none; margin: 25px 0;">
   <div style="border: 2px solid #667eea; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
