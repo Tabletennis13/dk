@@ -1985,14 +1985,12 @@ async function loadPingTournaments() {
   try {
     list.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">🔄 Загрузка...</div>';
     
-    // Используем исправленный ключ API (убрал проблемный символ)
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE';
     
-    // Формируем URL для запроса
     const today = new Date().toISOString().split('T')[0];
     const url = `https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_tournaments?select=*&order=play_date.asc&play_date=gte.${today}`;
     
-    // 1. Сначала загружаем турниры
+    // 1. Загружаем турниры
     const tournamentsResponse = await fetch(url, {
       headers: {
         'apikey': API_KEY,
@@ -2016,15 +2014,13 @@ async function loadPingTournaments() {
     container.style.display = 'block';
     
     const todayDate = new Date();
-    
-    // Берем ближайшие 5 турниров независимо от даты
     const upcomingTournaments = tournaments.slice(0, 5);
     
     let html = '';
     
     // Для каждого турнира загружаем участников
     for (const t of upcomingTournaments) {
-      // 2. Загружаем ВСЕХ участников этого турнира
+      // 2. Загружаем участников этого турнира
       const participantsUrl = `https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_user_dates?select=pp_users(login)&play_date=eq.${t.play_date}`;
       
       const participantsResponse = await fetch(participantsUrl, {
@@ -2041,10 +2037,31 @@ async function loadPingTournaments() {
       
       if (participantsResponse.ok) {
         participantsData = await participantsResponse.json();
-        participantCount = participantsData ? participantsData.length : 0;
-        allParticipantNames = participantsData 
-          ? participantsData.map(p => p.pp_users?.login || 'Аноним')
-          : [];
+        
+        // Отладочная информация
+        console.log('Данные участников для даты', t.play_date, ':', participantsData);
+        
+        if (participantsData && participantsData.length > 0) {
+          participantCount = participantsData.length;
+          
+          // Извлекаем имена из вложенной структуры
+          allParticipantNames = participantsData.map(p => {
+            // Проверяем разные варианты структуры данных
+            if (p.pp_users && p.pp_users.login) {
+              return p.pp_users.login;
+            } else if (p.login) {
+              return p.login;
+            } else if (p.pp_users) {
+              // Если pp_users - это строка или объект без login
+              return typeof p.pp_users === 'string' ? p.pp_users : 'Участник';
+            }
+            return 'Аноним';
+          }).filter(name => name && name !== 'Аноним');
+          
+          console.log('Извлеченные имена:', allParticipantNames);
+        }
+      } else {
+        console.log('Ошибка загрузки участников:', participantsResponse.status);
       }
       
       const date = new Date(t.play_date);
@@ -2086,9 +2103,9 @@ async function loadPingTournaments() {
           
           <div style="color: #333; font-weight: 500; margin-bottom: 8px;">${t.name}</div>
           
-          ${participantCount > 0 ? `
+          ${allParticipantNames.length > 0 ? `
             <div style="margin-bottom: 8px;">
-              <div style="color: #666; font-size: 0.85em; font-weight: bold; margin-bottom: 5px;">Записались (${participantCount}):</div>
+              <div style="color: #666; font-size: 0.85em; font-weight: bold; margin-bottom: 5px;">Записались (${allParticipantNames.length}):</div>
               <div style="display: flex; flex-wrap: wrap; gap: 5px;">
                 ${allParticipantNames.map(name => `
                   <span style="background: #e8f5e9; color: #2E7D32; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; border: 1px solid #c8e6c9;">
@@ -2099,7 +2116,7 @@ async function loadPingTournaments() {
             </div>
           ` : `
             <div style="color: #999; font-size: 0.85em; margin-bottom: 8px; text-align: center; padding: 5px;">
-              😔 Пока никто не записался
+              ${participantCount > 0 ? '😕 Не удалось загрузить имена участников' : '😔 Пока никто не записался'}
             </div>
           `}
           
