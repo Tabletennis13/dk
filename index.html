@@ -1942,7 +1942,7 @@ background: white;
                     <tbody id="ratingBody"></tbody>
                                 </table>
             </div>
-        <!-- ТУРНИРЫ ДЛЯ ЗАПИСИ -->
+<!-- ТУРНИРЫ ДЛЯ ЗАПИСИ -->
 <div id="tournamentsForSignup" style="display: none; margin: 25px 0;">
   <div style="border: 2px solid #667eea; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
     <div style="background: white; padding: 20px; border-bottom: 2px solid #f0f0f0;">
@@ -1983,15 +1983,17 @@ async function loadPingTournaments() {
   const list = document.getElementById('pingTournamentsList');
   
   try {
-    // Прямой запрос к Supabase
-    const response = await fetch('https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_tournaments?select=*&order=play_date.asc&play_date=gte.' + new Date().toISOString().split('T')[0], {
+    list.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">🔄 Загрузка...</div>';
+    
+    // 1. Сначала загружаем турниры
+    const tournamentsResponse = await fetch('https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_tournaments?select=*&order=play_date.asc&play_date=gte.' + new Date().toISOString().split('T')[0], {
       headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE',
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImVхcCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE',
         'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE'
       }
     });
     
-    const tournaments = await response.json();
+    const tournaments = await tournamentsResponse.json();
     
     if (!tournaments || tournaments.length === 0) {
       container.style.display = 'none';
@@ -2001,53 +2003,108 @@ async function loadPingTournaments() {
     // Показываем блок
     container.style.display = 'block';
     
-    let html = '';
     const today = new Date();
-    const next7Days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
     
-    // Фильтруем турниры на ближайшие 7 дней
-    const upcomingTournaments = tournaments.filter(t => {
-      const tourDate = new Date(t.play_date);
-      return tourDate >= today && tourDate <= next7Days;
-    }).slice(0, 3); // Показываем максимум 3 ближайших
+    // Берем ближайшие 5 турниров независимо от даты
+    const upcomingTournaments = tournaments.slice(0, 5);
     
-    if (upcomingTournaments.length === 0) {
-      html = `
-        <div style="text-align: center; padding: 20px; color: #666;">
-          <div style="font-size: 32px; margin-bottom: 10px;">📅</div>
-          <p style="margin: 0;">Ближайших турниров на этой неделе нет</p>
-          <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #888;">Выберите дату в системе записи!</p>
+    let html = '';
+    
+    // Для каждого турнира загружаем участников
+    for (const t of upcomingTournaments) {
+      // 2. Загружаем ВСЕХ участников этого турнира
+      const participantsResponse = await fetch(
+        `https://bqycjfcjtdawyrysgrbw.supabase.co/rest/v1/pp_user_dates?select=pp_users(login)&play_date=eq.${t.play_date}`,
+        {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2M015NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeWNqZmNqdGRhd3lyeXNncmJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDE5NzAsImV4cCI6MjA4MjE3Nzk3MH0.LEOUMFAd1cz_1e4uawJcaZLPCMqAQHEWM52Oy7fDjsE'
+          }
+        }
+      );
+      
+      const participantsData = await participantsResponse.json();
+      const participantCount = participantsData ? participantsData.length : 0;
+      const allParticipantNames = participantsData 
+        ? participantsData.map(p => p.pp_users?.login || 'Аноним')
+        : [];
+      
+      const date = new Date(t.play_date);
+      const dayOfWeek = date.toLocaleDateString('ru-RU', { weekday: 'short' });
+      const dayMonth = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+      const isToday = date.toDateString() === today.toDateString();
+      const isTomorrow = new Date(date.getTime() - 24 * 60 * 60 * 1000).toDateString() === today.toDateString();
+      const daysDiff = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+      
+      // Определяем статус по количеству дней до турнира
+      let dateStatus = '';
+      let dateColor = '#667eea';
+      
+      if (isToday) {
+        dateStatus = 'СЕГОДНЯ';
+        dateColor = '#FF9800';
+      } else if (isTomorrow) {
+        dateStatus = 'ЗАВТРА';
+        dateColor = '#2196F3';
+      } else if (daysDiff <= 7) {
+        dateStatus = dayOfWeek.toUpperCase();
+        dateColor = '#667eea';
+      } else {
+        dateStatus = `ЧЕРЕЗ ${daysDiff} ДН.`;
+        dateColor = '#9C27B0';
+      }
+      
+      html += `
+        <div style="background: white; border: 2px solid #e8f5e9; border-radius: 8px; padding: 12px; margin-bottom: 10px; transition: transform 0.2s;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <div style="background: ${dateColor}; 
+                        color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em;">
+              ${dateStatus}
+            </div>
+            <div style="font-weight: bold; color: #333; font-size: 1.1em;">${dayMonth}</div>
+            <div style="margin-left: auto; background: #f0f0f0; color: #666; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">
+              👥 ${participantCount}
+            </div>
+          </div>
+          
+          <div style="color: #333; font-weight: 500; margin-bottom: 8px;">${t.name}</div>
+          
+          ${participantCount > 0 ? `
+            <div style="margin-bottom: 8px;">
+              <div style="color: #666; font-size: 0.85em; font-weight: bold; margin-bottom: 5px;">Записались (${participantCount}):</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                ${allParticipantNames.map(name => `
+                  <span style="background: #e8f5e9; color: #2E7D32; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; border: 1px solid #c8e6c9;">
+                    ${name}
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          ` : `
+            <div style="color: #999; font-size: 0.85em; margin-bottom: 8px; text-align: center; padding: 5px;">
+              😔 Пока никто не записался
+            </div>
+          `}
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f0f0f0;">
+            <div style="color: ${participantCount >= 3 ? '#4CAF50' : '#FF9800'}; font-size: 0.85em; font-weight: bold;">
+              ${participantCount >= 3 ? '✅ Турнир подтвержден' : `⏳ Нужно еще ${3 - participantCount}`}
+            </div>
+            <a href="https://tabletennis13.github.io/on/" target="_blank" 
+               style="color: #667eea; font-size: 0.85em; text-decoration: none; font-weight: bold; background: #f0f0f0; padding: 4px 10px; border-radius: 6px;">
+              Записаться →
+            </a>
+          </div>
         </div>
       `;
-    } else {
-      upcomingTournaments.forEach(t => {
-        const date = new Date(t.play_date);
-        const dayOfWeek = date.toLocaleDateString('ru-RU', { weekday: 'short' });
-        const dayMonth = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-        const isToday = date.toDateString() === today.toDateString();
-        const isTomorrow = new Date(date.getTime() - 24 * 60 * 60 * 1000).toDateString() === today.toDateString();
-        
-        html += `
-          <div style="background: white; border: 2px solid #e8f5e9; border-radius: 8px; padding: 12px; margin-bottom: 10px; transition: transform 0.2s;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-              <div style="background: ${isToday ? '#FF9800' : (isTomorrow ? '#2196F3' : '#667eea')}; 
-                          color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em;">
-                ${isToday ? 'СЕГОДНЯ' : (isTomorrow ? 'ЗАВТРА' : dayOfWeek.toUpperCase())}
-              </div>
-              <div style="font-weight: bold; color: #333; font-size: 1.1em;">${dayMonth}</div>
-            </div>
-            <div style="color: #333; font-weight: 500; margin-bottom: 5px;">${t.name}</div>
-            <div style="color: #666; font-size: 0.9em;">🏓 Турнир по настольному теннису</div>
-          </div>
-        `;
-      });
     }
     
     list.innerHTML = html;
     
   } catch (error) {
     console.error('Ошибка загрузки турниров:', error);
-    container.style.display = 'none';
+    list.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">⚠️ Не удалось загрузить турниры</div>';
+    container.style.display = 'block';
   }
 }
 
