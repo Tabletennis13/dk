@@ -5,8 +5,9 @@ console.log('🔥 ФАЙЛ matches-fix.js ЗАГРУЖЕН!');
 // ============================================
 
 // Добавляем CSS, который переопределит ограничение
-const style = document.createElement('style');
-style.textContent = `
+// ИСПРАВЛЕНО: используем уникальное имя переменной
+const matchesFixStyle = document.createElement('style');
+matchesFixStyle.textContent = `
     /* Убираем максимальную высоту у таблиц с матчами */
     .match-day-group {
         max-height: none !important;
@@ -35,7 +36,7 @@ style.textContent = `
         font-size: 11px !important;
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(matchesFixStyle);
 
 // ============================================
 // ВСЯ ФУНКЦИЯ updateMatchesTable (ПОЛНОСТЬЮ)
