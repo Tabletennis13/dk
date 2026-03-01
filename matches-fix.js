@@ -1,45 +1,7 @@
 console.log('🔥 ФАЙЛ matches-fix.js ЗАГРУЖЕН!');
 
 // ============================================
-// ПРОСТОЕ РЕШЕНИЕ - УБИРАЕМ ОГРАНИЧЕНИЕ ВЫСОТЫ
-// ============================================
-
-// Добавляем CSS, который переопределит ограничение
-// ИСПРАВЛЕНО: используем уникальное имя переменной
-const matchesFixStyle = document.createElement('style');
-matchesFixStyle.textContent = `
-    /* Убираем максимальную высоту у таблиц с матчами */
-    .match-day-group {
-        max-height: none !important;
-        height: auto !important;
-        overflow: visible !important;
-    }
-    
-    /* Убираем скролл, если он был */
-    .table-container {
-        overflow-x: auto !important;
-        overflow-y: visible !important;
-        max-height: none !important;
-    }
-    
-    /* Делаем таблицу чуть компактнее */
-    .match-day-group td {
-        padding: 6px 4px !important;
-    }
-    
-    .match-day-group .avatar {
-        width: 28px !important;
-        height: 28px !important;
-    }
-    
-    .match-day-group .player-cell span {
-        font-size: 11px !important;
-    }
-`;
-document.head.appendChild(matchesFixStyle);
-
-// ============================================
-// ВСЯ ФУНКЦИЯ updateMatchesTable (ПОЛНОСТЬЮ)
+// ПЕРЕЗАПИСЫВАЕМ ФУНКЦИЮ updateMatchesTable
 // ============================================
 function updateMatchesTable() {
     const container = document.getElementById('matchesContainer');
@@ -73,38 +35,45 @@ function updateMatchesTable() {
     
     const today = new Date().toDateString();
     
-    // Счетчик матчей
-    const totalMatches = document.createElement('div');
-    totalMatches.style.cssText = 'background: #e8f5e9; padding: 8px 12px; border-radius: 6px; margin: 10px 0; text-align: center; font-weight: bold;';
-    totalMatches.innerHTML = `📊 Всего матчей: ${matches.length} • Сегодня: ${matchesByDay[today]?.length || 0}`;
-    container.appendChild(totalMatches);
-    
-    // Кнопки управления
+    // КНОПКИ УПРАВЛЕНИЯ
     const controlsDiv = document.createElement('div');
-    controlsDiv.style.display = 'flex';
-    controlsDiv.style.gap = '10px';
-    controlsDiv.style.margin = '15px 0';
-    controlsDiv.style.flexWrap = 'wrap';
+    controlsDiv.style.cssText = 'display: flex; gap: 5px; margin: 10px 0;';
     
-    const expandAllBtn = document.createElement('button');
-    expandAllBtn.className = 'action-btn add-btn';
-    expandAllBtn.textContent = '📂 Развернуть все дни';
-    expandAllBtn.onclick = function() {
+    const expandBtn = document.createElement('button');
+    expandBtn.className = 'action-btn add-btn';
+    expandBtn.style.cssText = 'padding: 3px 8px; font-size: 11px;';
+    expandBtn.textContent = '📂 Развернуть все';
+    expandBtn.onclick = () => {
         document.querySelectorAll('.match-day-group').forEach(g => g.classList.remove('collapsed'));
         document.querySelectorAll('.match-day-header').forEach(h => h.classList.remove('collapsed'));
     };
     
-    const collapseAllBtn = document.createElement('button');
-    collapseAllBtn.className = 'action-btn penalty-btn';
-    collapseAllBtn.textContent = '📁 Свернуть все дни';
-    collapseAllBtn.onclick = function() {
+    const collapseBtn = document.createElement('button');
+    collapseBtn.className = 'action-btn penalty-btn';
+    collapseBtn.style.cssText = 'padding: 3px 8px; font-size: 11px;';
+    collapseBtn.textContent = '📁 Свернуть все';
+    collapseBtn.onclick = () => {
         document.querySelectorAll('.match-day-group').forEach(g => g.classList.add('collapsed'));
         document.querySelectorAll('.match-day-header').forEach(h => h.classList.add('collapsed'));
     };
     
-    controlsDiv.appendChild(expandAllBtn);
-    controlsDiv.appendChild(collapseAllBtn);
+    controlsDiv.appendChild(expandBtn);
+    controlsDiv.appendChild(collapseBtn);
     container.appendChild(controlsDiv);
+    
+    // Добавляем CSS прямо в функцию
+    const styleTag = document.createElement('style');
+    styleTag.textContent = `
+        .match-day-group {
+            max-height: none !important;
+            overflow: visible !important;
+        }
+        .table-container {
+            overflow-y: visible !important;
+            max-height: none !important;
+        }
+    `;
+    document.head.appendChild(styleTag);
     
     sortedDays.forEach((dayKey) => {
         const dayMatches = matchesByDay[dayKey];
@@ -115,20 +84,17 @@ function updateMatchesTable() {
         
         let displayDate;
         if (dayDate.toDateString() === today) {
-            displayDate = 'Сегодня';
+            displayDate = 'СЕГОДНЯ';
         } else if (dayDate.toDateString() === yesterday.toDateString()) {
-            displayDate = 'Вчера';
+            displayDate = 'ВЧЕРА';
         } else {
             displayDate = dayDate.toLocaleDateString('ru-RU', {
-                weekday: 'long',
                 day: 'numeric',
-                month: 'long',
-                year: 'numeric'
+                month: 'short'
             });
-            displayDate = displayDate.charAt(0).toUpperCase() + displayDate.slice(1);
         }
         
-        const dayId = 'matchDay_' + dayKey.replace(/\s+/g, '_').replace(/,/g, '');
+        const dayId = 'day_' + dayKey.replace(/\s/g, '_');
         
         const dayGroup = document.createElement('div');
         dayGroup.id = dayId;
@@ -136,9 +102,8 @@ function updateMatchesTable() {
         
         const dayHeader = document.createElement('div');
         dayHeader.className = 'match-day-header';
-        dayHeader.setAttribute('data-day-id', dayId);
         
-        // Сегодня развернуто, остальные свернуты
+        // ТОЛЬКО сегодня развернуто
         if (dayKey !== today) {
             dayGroup.classList.add('collapsed');
             dayHeader.classList.add('collapsed');
@@ -146,76 +111,65 @@ function updateMatchesTable() {
         
         dayHeader.innerHTML = `
             <div class="day-info">
-                <div class="toggle-icon">▼</div>
-                <div class="day-date">${displayDate}</div>
+                <span class="toggle-icon">▼</span>
+                <span class="day-date">${displayDate}</span>
             </div>
-            <div class="match-count">${dayMatches.length} матч${getPluralForm(dayMatches.length)}</div>
+            <span class="match-count">${dayMatches.length}</span>
         `;
         
-        dayHeader.addEventListener('click', function() {
+        dayHeader.onclick = () => {
             dayGroup.classList.toggle('collapsed');
-            this.classList.toggle('collapsed');
-        });
+            dayHeader.classList.toggle('collapsed');
+        };
         
+        // УПРОЩЕННАЯ ТАБЛИЦА - МИНИМУМ КОЛОНОК
         const tableContainer = document.createElement('div');
         tableContainer.className = 'table-container';
         
-        // Сортируем матчи внутри дня по времени
-        const sortedDayMatches = [...dayMatches].sort((a, b) => new Date(b.date) - new Date(a.date));
-        
         const table = document.createElement('table');
+        table.style.fontSize = '11px';
         
         table.innerHTML = `
             <thead>
                 <tr>
-                    <th>Время</th>
-                    <th>Игрок 1</th>
-                    <th>Игрок 2</th>
-                    <th>Победитель</th>
-                    <th>Счет</th>
-                    <th>Изменения</th>
-                    <th>Действия</th>
+                    <th style="padding: 3px;">Время</th>
+                    <th style="padding: 3px;">Игрок 1</th>
+                    <th style="padding: 3px;">Игрок 2</th>
+                    <th style="padding: 3px;">Счет</th>
+                    <th style="padding: 3px;"></th>
                 </tr>
             </thead>
             <tbody>
-                ${sortedDayMatches.map(match => {
-                    const matchTime = match.date.toLocaleTimeString('ru-RU', {
-                        hour: '2-digit',
-                        minute: '2-digit'
+                ${dayMatches.map(match => {
+                    const time = match.date.toLocaleTimeString('ru-RU', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
                     });
-                    
-                    const deleteButton = isAdmin ? 
-                        `<td><button class="delete-btn action-btn" onclick="deleteMatch('${match.id}')" title="Удалить матч">🗑️</button></td>` : 
-                        `<td>-</td>`;
                     
                     return `
                         <tr>
-                            <td>${matchTime}</td>
-                            <td>
-                                <div class="player-cell" onclick="showPlayerProfile('${match.player1}')" style="cursor: pointer;">
+                            <td style="padding: 2px;">${time}</td>
+                            <td style="padding: 2px;">
+                                <div style="display: flex; align-items: center; gap: 3px;" onclick="showPlayerProfile('${match.player1}')">
                                     <img src="${players[match.player1]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
-                                         class="avatar">
-                                    <span>${match.player1}</span>
+                                         style="width: 20px; height: 20px; border-radius: 50%;">
+                                    <span style="font-size: 10px;">${match.player1}</span>
                                 </div>
                             </td>
-                            <td>
-                                <div class="player-cell" onclick="showPlayerProfile('${match.player2}')" style="cursor: pointer;">
+                            <td style="padding: 2px;">
+                                <div style="display: flex; align-items: center; gap: 3px;" onclick="showPlayerProfile('${match.player2}')">
                                     <img src="${players[match.player2]?.avatar || 'https://i.pravatar.cc/150?img=3'}" 
-                                         class="avatar">
-                                    <span>${match.player2}</span>
+                                         style="width: 20px; height: 20px; border-radius: 50%;">
+                                    <span style="font-size: 10px;">${match.player2}</span>
                                 </div>
                             </td>
-                            <td><strong>${match.winner === 'draw' ? 'Ничья' : (match.winner || '-')}</strong></td>
-                            <td>${match.score || '-'}</td>
-                            <td>
-                                <span style="color: ${match.change1 > 0 ? '#4CAF50' : '#f44336'}">
-                                    ${match.change1 > 0 ? '+' : ''}${match.change1}
-                                </span> / 
-                                <span style="color: ${match.change2 > 0 ? '#4CAF50' : '#f44336'}">
-                                    ${match.change2 > 0 ? '+' : ''}${match.change2}
-                                </span>
+                            <td style="padding: 2px; font-weight: bold;">${match.score || '-'}</td>
+                            <td style="padding: 2px;">
+                                ${isAdmin ? 
+                                    `<button onclick="deleteMatch('${match.id}')" 
+                                        style="padding: 1px 3px; font-size: 9px;">🗑️</button>` : 
+                                    '-'}
                             </td>
-                            ${deleteButton}
                         </tr>
                     `;
                 }).join('')}
