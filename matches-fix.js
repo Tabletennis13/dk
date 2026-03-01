@@ -19,8 +19,13 @@ function updateMatchesTable() {
     
     const matchesByDay = {};
     
+    // ВАЖНО: Группируем ТОЛЬКО по дате (без времени)
     matches.forEach(match => {
-        const dateKey = match.date.toDateString();
+        // Создаем дату и нормализуем её до начала дня (00:00:00)
+        const matchDate = new Date(match.date);
+        // Устанавливаем время на 00:00:00 для правильной группировки по дням
+        const dateKey = new Date(matchDate.getFullYear(), matchDate.getMonth(), matchDate.getDate()).toDateString();
+        
         if (!matchesByDay[dateKey]) {
             matchesByDay[dateKey] = [];
         }
@@ -31,9 +36,24 @@ function updateMatchesTable() {
         return new Date(b) - new Date(a);
     });
     
-    const today = new Date().toDateString();
+    const today = new Date();
+    const todayKey = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toDateString();
     
-    // СОЗДАЕМ КНОПКИ УПРАВЛЕНИЯ
+    // Добавляем информацию о том, сколько всего матчей
+    const totalMatchesInfo = document.createElement('div');
+    totalMatchesInfo.style.cssText = `
+        background: #e8f5e9;
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        text-align: center;
+        font-weight: bold;
+        color: #2E7D32;
+    `;
+    totalMatchesInfo.innerHTML = `📊 Всего матчей: ${matches.length} • За сегодня: ${matchesByDay[todayKey]?.length || 0}`;
+    container.appendChild(totalMatchesInfo);
+    
+    // Кнопки управления
     const controlsDiv = document.createElement('div');
     controlsDiv.style.display = 'flex';
     controlsDiv.style.gap = '10px';
@@ -74,11 +94,12 @@ function updateMatchesTable() {
         
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayKey = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()).toDateString();
         
         let displayDate;
-        if (dayDate.toDateString() === today) {
+        if (dayKey === todayKey) {
             displayDate = 'Сегодня';
-        } else if (dayDate.toDateString() === yesterday.toDateString()) {
+        } else if (dayKey === yesterdayKey) {
             displayDate = 'Вчера';
         } else {
             displayDate = dayDate.toLocaleDateString('ru-RU', {
@@ -90,7 +111,7 @@ function updateMatchesTable() {
             displayDate = displayDate.charAt(0).toUpperCase() + displayDate.slice(1);
         }
         
-        const dayId = 'matchDay_' + dayKey.replace(/\s+/g, '_');
+        const dayId = 'matchDay_' + dayKey.replace(/\s+/g, '_').replace(/,/g, '');
         
         const dayGroup = document.createElement('div');
         dayGroup.id = dayId;
@@ -100,8 +121,8 @@ function updateMatchesTable() {
         dayHeader.className = 'match-day-header';
         dayHeader.setAttribute('data-day-id', dayId);
         
-        // сворачиваем все дни, кроме сегодняшнего
-        if (dayDate.toDateString() !== today) {
+        // Разворачиваем только сегодняшний день
+        if (dayKey !== todayKey) {
             dayGroup.classList.add('collapsed');
             dayHeader.classList.add('collapsed');
         }
@@ -130,6 +151,12 @@ function updateMatchesTable() {
         
         const tableContainer = document.createElement('div');
         tableContainer.className = 'table-container';
+        // Убираем ограничение по высоте
+        tableContainer.style.maxHeight = 'none';
+        tableContainer.style.overflowY = 'visible';
+        
+        // Сортируем матчи внутри дня по времени (от поздних к ранним)
+        const sortedDayMatches = [...dayMatches].sort((a, b) => new Date(b.date) - new Date(a.date));
         
         const table = document.createElement('table');
         table.style.fontSize = '12px';
@@ -147,7 +174,7 @@ function updateMatchesTable() {
                 </tr>
             </thead>
             <tbody>
-                ${dayMatches.map(match => {
+                ${sortedDayMatches.map(match => {
                     const matchTime = match.date.toLocaleTimeString('ru-RU', {
                         hour: '2-digit',
                         minute: '2-digit'
